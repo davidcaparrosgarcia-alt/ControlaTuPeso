@@ -1,20 +1,17 @@
-// sw.js - ControlaTuPeso+ v2.0 - Estrategia Stale-While-Revalidate
+// sw.js - ControlaTuPeso+ v2.0.5 - Estrategia Stale-While-Revalidate (Corregida)
 
-const CACHE_VERSION = 'v2.0.3';
+const CACHE_VERSION = 'v2.0.5';
 const CACHE_NAME = `controlatupeso-cache-${CACHE_VERSION}`;
 
+// Lista de recursos esenciales para el "cascarón" de la app.
+// Los vídeos se han eliminado de esta lista para evitar errores de caché parcial.
 const urlsToCache = [
-  // El "cascarón" de la app
   './',
   './index.html',
   './manifest.json',
   './iconos/icono-192.png',
   './iconos/icono-512.png',
   './iconos/icono-maskable-512.png',
-  './videos/intro.webm',
-  './videos/intro.mp4',
-
-  // Librerías externas (CDNs)
   'https://unpkg.com/react@18/umd/react.development.js',
   'https://unpkg.com/react-dom@18/umd/react-dom.development.js',
   'https://unpkg.com/@babel/standalone/babel.min.js',
@@ -24,8 +21,9 @@ const urlsToCache = [
   'https://fonts.googleapis.com/css2?family=Caveat:wght@500&family=Inter:wght@400;600;700&display=swap'
 ];
 
+// Instalación del Service Worker
 self.addEventListener('install', event => {
-  self.skipWaiting();
+  self.skipWaiting(); // Forza la activación del nuevo SW
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
@@ -36,6 +34,7 @@ self.addEventListener('install', event => {
   );
 });
 
+// Activación y limpieza de cachés antiguas
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(cacheNames => {
@@ -53,24 +52,35 @@ self.addEventListener('activate', event => {
   );
 });
 
+// Estrategia de Fetch: Stale-While-Revalidate
 self.addEventListener('fetch', event => {
+  // Ignorar peticiones que no sean GET
   if (event.request.method !== 'GET') {
+    return;
+  }
+  
+  // Ignorar peticiones de vídeo para evitar el error de contenido parcial (206)
+  if (event.request.url.includes('.mp4') || event.request.url.includes('.webm')) {
     return;
   }
 
   event.respondWith(
     caches.open(CACHE_NAME).then(cache => {
-      return cache.match(event.request).then(response => {
+      return cache.match(event.request).then(responseFromCache => {
+        // Obtener el recurso de la red en paralelo
         const fetchPromise = fetch(event.request).then(networkResponse => {
-          if (networkResponse.ok) {
+          // Solo cachear respuestas válidas y completas (status 200)
+          if (networkResponse && networkResponse.status === 200) {
             cache.put(event.request, networkResponse.clone());
           }
           return networkResponse;
         }).catch(err => {
-            // Silenciamos el error de fetch fallido cuando no hay conexión.
-            // El usuario recibirá la respuesta de la caché si existe.
+          // El fetch falla si no hay red. La app seguirá funcionando con la caché.
+          console.warn('Fetch fallido; la app funciona desde la caché.', err);
         });
-        return response || fetchPromise;
+
+        // Devolver la respuesta de la caché si existe, si no, esperar a la de la red.
+        return responseFromCache || fetchPromise;
       });
     })
   );
