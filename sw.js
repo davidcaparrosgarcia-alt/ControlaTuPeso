@@ -1,6 +1,6 @@
-// sw.js - v2.0 con Estrategia Stale-While-Revalidate
+// sw.js - ControlaTuPeso+ v2.0 - Estrategia Stale-While-Revalidate
 
-const CACHE_VERSION = 'v2.0.1-beta'; // Versión para el gran cambio
+const CACHE_VERSION = 'v2.0.2';
 const CACHE_NAME = `controlatupeso-cache-${CACHE_VERSION}`;
 
 const urlsToCache = [
@@ -25,12 +25,14 @@ const urlsToCache = [
 ];
 
 self.addEventListener('install', event => {
-  self.skipWaiting(); // Forza al nuevo SW a activarse más rápido
+  self.skipWaiting();
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => {
-      console.log('Cache abierta. Guardando recursos para la v2...');
-      return cache.addAll(urlsToCache);
-    }).catch(err => console.error('Fallo al cachear recursos:', err))
+    caches.open(CACHE_NAME)
+      .then(cache => {
+        console.log(`Cache ${CACHE_NAME} abierta. Guardando recursos...`);
+        return cache.addAll(urlsToCache);
+      })
+      .catch(err => console.error('Fallo al cachear recursos durante la instalación:', err))
   );
 });
 
@@ -38,20 +40,20 @@ self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(cacheNames => {
       return Promise.all(
-        cacheNames.filter(name => name !== CACHE_NAME).map(name => {
+        cacheNames
+          .filter(name => name !== CACHE_NAME)
+          .map(name => {
             console.log('Borrando caché antigua:', name);
             return caches.delete(name);
-        })
+          })
       );
     }).then(() => {
-        // Toma el control de todas las pestañas abiertas inmediatamente
         return self.clients.claim();
     })
   );
 });
 
 self.addEventListener('fetch', event => {
-  // Ignoramos las peticiones que no son GET
   if (event.request.method !== 'GET') {
     return;
   }
@@ -60,18 +62,14 @@ self.addEventListener('fetch', event => {
     caches.open(CACHE_NAME).then(cache => {
       return cache.match(event.request).then(response => {
         const fetchPromise = fetch(event.request).then(networkResponse => {
-          // Solo cacheamos respuestas válidas
           if (networkResponse.ok) {
             cache.put(event.request, networkResponse.clone());
           }
           return networkResponse;
         }).catch(err => {
-            // Si la red falla, no hacemos nada, la respuesta de la caché (si existía) ya se ha devuelto.
-            // console.warn('Fetch fallido:', err);
+            // Silenciamos el error de fetch fallido cuando no hay conexión.
+            // El usuario recibirá la respuesta de la caché si existe.
         });
-
-        // Devolvemos la respuesta de la caché inmediatamente si existe,
-        // si no, esperamos a la respuesta de la red.
         return response || fetchPromise;
       });
     })
