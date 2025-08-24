@@ -1,6 +1,6 @@
 // sw.js - ControlaTuPeso+ v2.0 - Estrategia Stale-While-Revalidate
 
-const CACHE_VERSION = 'v2.0.2';
+const CACHE_VERSION = 'v2.0.3';
 const CACHE_NAME = `controlatupeso-cache-${CACHE_VERSION}`;
 
 const urlsToCache = [
