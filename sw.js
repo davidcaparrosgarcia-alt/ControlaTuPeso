@@ -1,10 +1,10 @@
-// sw.js - ControlaTuPeso+ v2.0.5 - Estrategia Stale-While-Revalidate (Corregida)
+// sw.js - ControlaTuPeso+ v2.0.6 - Estrategia Stale-While-Revalidate (Corregida)
 
-const CACHE_VERSION = 'v2.0.5';
+const CACHE_VERSION = 'v2.0.6';
 const CACHE_NAME = `controlatupeso-cache-${CACHE_VERSION}`;
 
 // Lista de recursos esenciales para el "cascarón" de la app.
-// Los vídeos se han eliminado de esta lista para evitar errores de caché parcial.
+// Se ha eliminado la URL de Google Fonts para garantizar una instalación de caché fiable.
 const urlsToCache = [
   './',
   './index.html',
@@ -17,8 +17,8 @@ const urlsToCache = [
   'https://unpkg.com/@babel/standalone/babel.min.js',
   'https://cdn.tailwindcss.com',
   'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
-  'https://fonts.googleapis.com/css2?family=Caveat:wght@500&family=Inter:wght@400;600;700&display=swap'
+  'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'
+  // La URL de Google Fonts ha sido eliminada de esta lista.
 ];
 
 // Instalación del Service Worker
@@ -54,8 +54,14 @@ self.addEventListener('activate', event => {
 
 // Estrategia de Fetch: Stale-While-Revalidate
 self.addEventListener('fetch', event => {
-  // Ignorar peticiones que no sean GET
   if (event.request.method !== 'GET') {
+    return;
+  }
+  
+  // Estrategia para las peticiones a Google Fonts y CDNs: solo red.
+  // Esto evita problemas de caché con respuestas opacas o redirecciones.
+  if (event.request.url.startsWith('https://fonts.googleapis.com') || 
+      event.request.url.startsWith('https://fonts.gstatic.com')) {
     return;
   }
   
@@ -67,19 +73,17 @@ self.addEventListener('fetch', event => {
   event.respondWith(
     caches.open(CACHE_NAME).then(cache => {
       return cache.match(event.request).then(responseFromCache => {
-        // Obtener el recurso de la red en paralelo
         const fetchPromise = fetch(event.request).then(networkResponse => {
-          // Solo cachear respuestas válidas y completas (status 200)
+          // Solo cachear respuestas válidas y completas
           if (networkResponse && networkResponse.status === 200) {
             cache.put(event.request, networkResponse.clone());
           }
           return networkResponse;
         }).catch(err => {
-          // El fetch falla si no hay red. La app seguirá funcionando con la caché.
-          console.warn('Fetch fallido; la app funciona desde la caché.', err);
+          // El fetch falla si no hay red.
+          console.warn(`Fetch fallido para ${event.request.url}; la app podría funcionar desde la caché.`);
         });
 
-        // Devolver la respuesta de la caché si existe, si no, esperar a la de la red.
         return responseFromCache || fetchPromise;
       });
     })
