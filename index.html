@@ -5,11 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>ControlaTuPeso+</title>
 
+  <!-- PWA y Metadatos -->
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="iconos/favicon.ico" type="image/x-icon">
   <link rel="apple-touch-icon" href="iconos/icono-192.png">
   <meta name="theme-color" content="#1f2937">
 
+  <!-- Librerías Externas (CDNs) -->
   <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -17,10 +19,13 @@
   <script> tailwind.config = { darkMode: 'class', theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'], handwriting: ['Caveat', 'cursive'] } } } } </script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  
+  <!-- Fuentes de Google -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   
+  <!-- Estilos y Script de Errores -->
   <style>
     body { font-family: 'Inter', sans-serif; }
     .elevated-border{border:2px solid rgba(107,114,128,.8)}
@@ -31,28 +36,10 @@
     .tooltip{position:absolute; left:50%; transform:translateX(-50%); bottom:calc(100% + .5rem); background:#111827; color:#fff; padding:.75rem; font-size:.8rem; border-radius:.5rem; box-shadow:0 10px 15px -3px rgb(0 0 0 / 0.1); display:none; width:280px; max-width:90vw; z-index: 60; text-align:left;}
     .tooltip-wrap:hover .tooltip{display:block}
     @media (max-width: 480px){ .tooltip{left:0; transform:none} }
-
-    .splash {
-      position: fixed;
-      inset: 0;
-      z-index: 9999;
-      background-color: #000;
-      transition: opacity 0.5s ease-out, visibility 0.5s ease-out;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .splash-video {
-      width: 100%;
-      height: 100%;
-      object-fit: contain; 
-    }
-    .splash-hidden {
-      opacity: 0;
-      visibility: hidden;
-    }
+    .splash { position: fixed; inset: 0; z-index: 9999; background-color: #000; transition: opacity 0.5s ease-out, visibility 0.5s ease-out; display: flex; align-items: center; justify-content: center; }
+    .splash-video { width: 100%; height: 100%; object-fit: contain; }
+    .splash-hidden { opacity: 0; visibility: hidden; }
   </style>
-
   <script>
     window.onerror = function(msg, src, line, col, err){
       console.error('WINDOW ONERROR:', { msg, src, line, col, err });
@@ -68,7 +55,6 @@
       }
     };
   </script>
-
 </head>
 <body class="bg-gray-50 dark:bg-gray-900">
 
