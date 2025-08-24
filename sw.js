@@ -1,10 +1,9 @@
-// sw.js - ControlaTuPeso+ v2.0.6 - Estrategia Stale-While-Revalidate (Corregida)
+// sw.js - ControlaTuPeso+ v2.0.8 - Estrategia de Caché Robusta
 
-const CACHE_VERSION = 'v2.0.6';
+const CACHE_VERSION = 'v2.0.8';
 const CACHE_NAME = `controlatupeso-cache-${CACHE_VERSION}`;
 
 // Lista de recursos esenciales para el "cascarón" de la app.
-// Los vídeos se han eliminado de esta lista para evitar errores de caché parcial.
 const urlsToCache = [
   './',
   './index.html',
@@ -12,29 +11,41 @@ const urlsToCache = [
   './iconos/icono-192.png',
   './iconos/icono-512.png',
   './iconos/icono-maskable-512.png',
-  'https://unpkg.com/react@18/umd/react.development.js',
-  'https://unpkg.com/react-dom@18/umd/react-dom.development.js',
+  'https://unpkg.com/react@18/umd/react.production.min.js',
+  'https://unpkg.com/react-dom@18/umd/react-dom.production.min.js',
   'https://unpkg.com/@babel/standalone/babel.min.js',
   'https://cdn.tailwindcss.com',
   'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
-  'https://fonts.googleapis.com/css2?family=Caveat:wght@500&family=Inter:wght@400;600;700&display=swap'
+  'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'
+  // Las fuentes y vídeos se cargarán desde la red, no se pre-cachean.
 ];
 
-// Instalación del Service Worker
+// --- INSTALACIÓN ---
 self.addEventListener('install', event => {
-  self.skipWaiting(); // Forza la activación del nuevo SW
+  self.skipWaiting(); // Activa el nuevo SW inmediatamente
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
-        console.log(`Cache ${CACHE_NAME} abierta. Guardando recursos...`);
-        return cache.addAll(urlsToCache);
+        console.log(`Cache ${CACHE_NAME} abierta. Guardando recursos uno por uno...`);
+        // Usamos cache.add para cada recurso. Si uno falla, Promise.all no se romperá
+        // y podremos ver en la consola cuál es el problemático.
+        const promises = urlsToCache.map(url => {
+          return cache.add(url).catch(reason => {
+            console.error(`Fallo al cachear: ${url}`, reason);
+          });
+        });
+        return Promise.all(promises);
       })
-      .catch(err => console.error('Fallo al cachear recursos durante la instalación:', err))
+      .then(() => {
+        console.log('Todos los recursos esenciales han sido procesados.');
+      })
+      .catch(err => {
+        console.error('Fallo grave durante la apertura del cache:', err);
+      })
   );
 });
 
-// Activación y limpieza de cachés antiguas
+// --- ACTIVACIÓN Y LIMPIEZA ---
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(cacheNames => {
@@ -47,40 +58,43 @@ self.addEventListener('activate', event => {
           })
       );
     }).then(() => {
-        return self.clients.claim();
+      console.log('Service Worker activado y reclamando clientes.');
+      return self.clients.claim();
     })
   );
 });
 
-// Estrategia de Fetch: Stale-While-Revalidate
+// --- ESTRATEGIA DE FETCH (Cache first, then network) ---
 self.addEventListener('fetch', event => {
+  const { request } = event;
+
   // Ignorar peticiones que no sean GET
-  if (event.request.method !== 'GET') {
+  if (request.method !== 'GET') {
     return;
   }
-  
-  // Ignorar peticiones de vídeo para evitar el error de contenido parcial (206)
-  if (event.request.url.includes('.mp4') || event.request.url.includes('.webm')) {
+
+  // Ignorar peticiones de vídeo para evitar errores de contenido parcial
+  if (request.url.includes('.mp4') || request.url.includes('.webm')) {
     return;
   }
 
   event.respondWith(
-    caches.open(CACHE_NAME).then(cache => {
-      return cache.match(event.request).then(responseFromCache => {
-        // Obtener el recurso de la red en paralelo
-        const fetchPromise = fetch(event.request).then(networkResponse => {
-          // Solo cachear respuestas válidas y completas (status 200)
-          if (networkResponse && networkResponse.status === 200) {
-            cache.put(event.request, networkResponse.clone());
-          }
-          return networkResponse;
-        }).catch(err => {
-          // El fetch falla si no hay red. La app seguirá funcionando con la caché.
-          console.warn('Fetch fallido; la app funciona desde la caché.', err);
-        });
+    caches.match(request).then(cachedResponse => {
+      // Si el recurso está en la caché, lo devolvemos inmediatamente.
+      if (cachedResponse) {
+        return cachedResponse;
+      }
 
-        // Devolver la respuesta de la caché si existe, si no, esperar a la de la red.
-        return responseFromCache || fetchPromise;
+      // Si no está en la caché, vamos a la red.
+      return fetch(request).then(networkResponse => {
+        // No intentamos cachear la respuesta aquí para mantener la lógica simple
+        // y evitar los errores de "put" que veías antes. La caché se llena
+        // principalmente durante la instalación.
+        return networkResponse;
+      }).catch(() => {
+        // Si tanto la caché como la red fallan, no podemos hacer nada.
+        // Esto solo pasará si el usuario está sin conexión y pide algo
+        // que no se guardó en la caché inicial.
       });
     })
   );
