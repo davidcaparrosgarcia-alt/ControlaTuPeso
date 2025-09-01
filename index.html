@@ -743,40 +743,28 @@ const StarIcon = ({ className, ...props }) => {
       const [dayModalDate, setDayModalDate] = React.useState(null);
       const [eventModal, setEventModal] = React.useState({ open: false, date: null, type: null, existing: null });
 
-      // ========= INICIO DE LA LÓGICA DE AUTO-SCROLL MEJORADA =========
+      // CORRECCIÓN 1: Lógica de auto-scroll, ahora dentro de CalendarView para asegurar que se ejecuta después de renderizar.
       React.useEffect(() => {
-          // No hacemos nada si no hay ref, si no es móvil, o si no hay usuario
           if (!calendarRef.current || window.innerWidth >= 640 || !user) {
               return;
           }
+          
+          // Simplificamos la lógica: el objetivo es SIEMPRE el día de hoy.
+          const targetDate = new Date(); 
 
-          const lastEntry = user.entries?.slice().sort((a, b) => new Date(a.date) - new Date(b.date)).pop();
-          let targetDate;
+          // Solo intentamos hacer scroll si el mes que se está mostrando es el mes actual.
+          if (date.getFullYear() === targetDate.getFullYear() && date.getMonth() === targetDate.getMonth()) {
+              const dateToScrollString = fmt(targetDate);
+              const targetElement = calendarRef.current.querySelector(`button[data-date="${dateToScrollString}"]`);
 
-          if (lastEntry) {
-              const lastRegisteredDate = new Date(lastEntry.date + 'T00:00:00');
-              const nextDayToRegister = new Date(lastRegisteredDate);
-              nextDayToRegister.setDate(lastRegisteredDate.getDate() + 1);
-              
-              if (nextDayToRegister <= new Date()) {
-                  targetDate = nextDayToRegister;
-              } else {
-                  targetDate = lastRegisteredDate;
+              if (targetElement) {
+                  // Usamos un pequeño retardo para dar tiempo al navegador a pintar todo.
+                  setTimeout(() => {
+                      targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  }, 200); 
               }
-          } else {
-              targetDate = new Date();
           }
-
-          const dateToScrollString = fmt(targetDate);
-          const targetElement = calendarRef.current.querySelector(`button[data-date="${dateToScrollString}"]`);
-
-          if (targetElement) {
-              setTimeout(() => {
-                  targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-              }, 150); // Un retardo ligeramente mayor para máxima compatibilidad
-          }
-      }, [user, date]); // Se ejecuta cuando los datos del usuario o el mes visible cambian
-      // ========= FIN DE LA LÓGICA DE AUTO-SCROLL =========
+      }, [date, user.entries]); // Se ejecuta solo cuando cambia el mes o cuando se actualizan los registros.
 
       const handleOpenEventModal = (dayStr, eventType = null) => {
           const dayEvents = getEventsForDay(new Date(dayStr + 'T00:00:00'));
@@ -1008,7 +996,7 @@ const StarIcon = ({ className, ...props }) => {
                         <div className="flex items-center gap-4">
                             <div className="flex flex-col items-center justify-center w-12 text-center">
                                 <span className="text-xs font-bold uppercase text-gray-600 dark:text-gray-300">{weekdayAbbr}</span>
-                                <span className="text-2xl font-bold leading-none text-gray-700 dark:text-white">{d.getDate()}</span>
+                                <span className="text-2xl font-bold leading-tight text-gray-700 dark:text-white">{d.getDate()}</span>
                             </div>
 
                             <div>
@@ -1066,7 +1054,6 @@ const StarIcon = ({ className, ...props }) => {
         {eventModal.open && <EventModal open={eventModal.open} onClose={() => setEventModal({ open: false, date: null, type: null, existing: null })} date={eventModal.date} onSave={saveEvent} onDelete={deleteEvent} existingEvent={eventModal.existing} eventType={eventModal.type} />}
       </div>);
     };
-
     const MilestoneIndicator = ({label, position}) => (
       <div className="absolute transition-transform duration-500" style={{top: 'calc(100% + 0.5rem)', left: `${position}%`, transform: 'translateX(-50%)'}}>
         <div className="relative flex flex-col items-center">
@@ -1608,8 +1595,9 @@ const ProfileView = ({user, setUser, theme})=>{
                   setCalendarDate(new Date(lastEntry.date + 'T00:00:00'));
               }
           }
-      }, [view, current]);
+      }, [view]);
       
+
       React.useEffect(() => { if (view === 'loading') { if (current) setView('app'); else if (users.length > 0) setView('select'); else setView('welcome'); } }, [users, current, view]);
       const handleLogout = () => { setCurrent(null); setView(users.length > 0 ? 'select' : 'welcome'); };
       const handlePinValidate = (pin) => { 
@@ -1706,5 +1694,6 @@ const ProfileView = ({user, setUser, theme})=>{
 </body>
 
 </html>
+
 
 
