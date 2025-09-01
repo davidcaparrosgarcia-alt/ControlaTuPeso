@@ -1,6 +1,6 @@
 {
   "name": "ControlaTuPeso+",
-  "short_name": "CTP+",
+  "short_name": "ControlaTuPeso+",
   "description": "Una aplicación para el seguimiento del peso, hábitos y proyecciones de objetivos.",
   "start_url": ".",
   "display": "standalone",
@@ -15,7 +15,7 @@
     },
     {
       "src": "iconos/icono-512.png",
-      "sizes": "512x512 192x192",
+      "sizes": "192x192 512x512",
       "type": "image/png",
       "purpose": "any"
     },

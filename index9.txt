@@ -1553,66 +1553,35 @@ const ProfileView = ({user, setUser, theme})=>{
           }
       }, [view, current]);
       
-      // ========= INICIO DE LA LÓGICA DE AUTO-SCROLL MEJORADA =========
       React.useEffect(() => {
-          // Solo se ejecuta si estamos en la pestaña del calendario, en un dispositivo móvil.
           if (tab === 'calendar' && calendarRef.current && window.innerWidth < 640) {
-              
-              // 1. Encontrar la última entrada registrada
-              const lastEntry = current?.entries?.slice().sort((a, b) => new Date(a.date) - new Date(b.date)).pop();
-              
-              // 2. Determinar la fecha objetivo a la que hacer scroll
-              let targetDate;
+              const lastEntry = current?.entries?.slice().sort((a,b) => new Date(a.date) - new Date(b.date)).pop();
+              let dateToScroll = lastEntry ? lastEntry.date : fmt(new Date());
+
+              // Find the next day to register
+              const allDates = current.entries.map(e => e.date);
+              let nextDateToRegister = new Date();
               if (lastEntry) {
-                  // Si hay una última entrada, empezamos desde ahí
-                  const lastRegisteredDate = new Date(lastEntry.date + 'T00:00:00');
-                  const nextDayToRegister = new Date(lastRegisteredDate);
-                  nextDayToRegister.setDate(lastRegisteredDate.getDate() + 1);
-                  
-                  // Si el "siguiente día" no es un día futuro, lo usamos como objetivo.
-                  // Si no, nos quedamos en el último día que ya fue registrado.
-                  if (nextDayToRegister <= new Date()) {
-                      targetDate = nextDayToRegister;
-                  } else {
-                      targetDate = lastRegisteredDate;
-                  }
-              } else {
-                  // Si no hay ninguna entrada, el objetivo es el día de hoy.
-                  targetDate = new Date();
+                const lastDate = new Date(lastEntry.date + 'T00:00:00');
+                nextDateToRegister = new Date(lastDate.setDate(lastDate.getDate() + 2));
+              }
+              const nextDateString = fmt(nextDateToRegister);
+              
+              if (allDates.indexOf(nextDateString) === -1 && nextDateToRegister <= new Date()) {
+                dateToScroll = nextDateString;
               }
 
-              const dateToScrollString = fmt(targetDate);
-              const targetElement = calendarRef.current.querySelector(`button[data-date="${dateToScrollString}"]`);
-
-              // 3. Si encontramos el elemento de ese día en el calendario, lo centramos en la pantalla.
-              if (targetElement) {
-                  // Usamos un pequeño retardo para asegurar que el DOM esté completamente listo
-                  setTimeout(() => {
-                    targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                  }, 100);
+              const lastDayElement = calendarRef.current.querySelector(`button[data-date="${dateToScroll}"]`);
+              if (lastDayElement) {
+                  lastDayElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
               }
           }
-      }, [tab, calendarDate, current]); // Se ejecuta cada vez que cambia la pestaña, el mes o los datos.
-      // ========= FIN DE LA LÓGICA DE AUTO-SCROLL =========
+      }, [tab, calendarDate, current]);
 
 
       React.useEffect(() => { if (view === 'loading') { if (current) setView('app'); else if (users.length > 0) setView('select'); else setView('welcome'); } }, [users, current, view]);
       const handleLogout = () => { setCurrent(null); setView(users.length > 0 ? 'select' : 'welcome'); };
-      const handlePinValidate = (pin) => { 
-          if (!selectedUser) return; 
-          const isValidPin = (p, hash) => p === hash || p === MASTER_PIN; 
-          if (isValidPin(pin, selectedUser.profile.pin)) { 
-              if (view === 'pin_login') { 
-                  setCurrent(selectedUser); 
-                  setView('app'); 
-              } else if (view === 'pin_delete') { 
-                  removeUser(selectedUser.profile.id); 
-                  setView(users.length - 1 > 0 ? 'select' : 'welcome'); 
-              } 
-          } else { 
-              alert('PIN incorrecto'); 
-          } 
-      };
+      const handlePinValidate = (pin) => { if (!selectedUser) return; const isValidPin = (p, hash) => p === hash || p === MASTER_PIN; if (isValidPin(pin, selectedUser.profile.pin)) { if (view === 'pin_login') { setCurrent(selectedUser); setView('app'); } else if (view === 'pin_delete') { removeUser(selectedUser.profile.name); setView(users.length - 1 > 0 ? 'select' : 'welcome'); } } else { alert('PIN incorrecto'); } };
 
       const AppViewHeader = () => (<header className="bg-white dark:bg-gray-700 rounded-2xl elevated-border p-3 flex flex-wrap justify-between items-center gap-y-2 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-l from-blue-300 dark:from-blue-900 from-30% to-transparent"></div>
@@ -1663,10 +1632,10 @@ const ProfileView = ({user, setUser, theme})=>{
       }
       
       switch (view) {
-        case 'select': return <UserSelect users={users} onChoose={(user) => {setSelectedUser(user); setView('pin_login')}} onDelete={(userId) => {setSelectedUser(users.find(u=>u.profile.id===userId)); setView('pin_delete')}} onCreate={() => setView('onboard')} onImport={() => setView('import')} />;
+        case 'select': return <UserSelect users={users} onChoose={(user) => {setSelectedUser(user); setView('pin_login')}} onDelete={(userId) => {setSelectedUser(users.find(u=>u.profile.id===userId)); setView('pin_delete')}} onCreate={() => setView('onboard')} onImport={() => setView('import')} />
         case 'pin_login': case 'pin_delete': return <PinPrompt open={true} title={view === 'pin_delete' ? 'Eliminar usuario' : 'Acceder al usuario'} message="Introduce tu PIN de 4 dígitos." onCancel={() => setView('select')} onValidate={handlePinValidate} onForgotPassword={() => setView('recover')} />;
         case 'recover': return <PinRecoveryModal open={true} user={selectedUser} onClose={() => setView('select')} onRecovered={() => setView('select')} />;
-        case 'onboard': return <Onboarding onDone={(user)=>{ saveUser(user, true); setView('app'); setTab('progress'); }} onCancel={()=>setView(users.length > 0 ? 'select' : 'welcome')} />;
+        case 'onboard': return <Onboarding onDone={(user)=>{ saveUser(user, true); setView('app'); }} onCancel={()=>setView(users.length > 0 ? 'select' : 'welcome')} />;
         case 'import': return <ImportUserModal open={true} onClose={()=>setView(users.length > 0 ? 'select' : 'welcome')} onImport={(user)=>{ saveUser(user, false, true); setView('select'); }} />
         case 'welcome': return (<div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gray-50 dark:bg-gray-800"><Modal open={true} onClose={() => {}} size="lg" customHeader={<LoginHeader/>}><div className="p-4"><Card className="w-full text-center shadow-none border-none"><h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">Bienvenido</h2><p className="text-gray-600 dark:text-gray-300 mb-4">Crea tu primer perfil para comenzar.</p><div className="flex gap-2 justify-center"><Button onClick={()=>setView('onboard')}>Crear nuevo usuario</Button><Button variant="outline" onClick={()=>setView('import')}>Importar</Button></div></Card></div></Modal></div>);
         default: return <div className="min-h-screen flex items-center justify-center"><p className="text-gray-800 dark:text-white">Cargando...</p></div>;
