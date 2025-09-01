@@ -55,8 +55,24 @@
     .dark .calendar-cell{border-color:rgba(75,85,99,.9)}
     .tooltip{position:absolute; left:50%; transform:translateX(-50%); bottom:calc(100% + .5rem); background:#111827; color:#fff; padding:.75rem; font-size:.8rem; border-radius:.5rem; box-shadow:0 10px 15px -3px rgb(0 0 0 / 0.1); display:none; width:280px; max-width:90vw; z-index: 60; text-align:left;}
     .tooltip-wrap:hover .tooltip{display:block}
-    @media (max-width: 480px){ .tooltip{left:0; transform:none} }
-    .splash { position: fixed; inset: 0; z-index: 9999; background-color: #000; transition: opacity 0.5s ease-out, visibility 0.5s ease-out; display: flex; align-items: center; justify-content: center; }
+@media (max-width: 767px) {
+      html {
+        -webkit-text-size-adjust: 100%;
+        text-size-adjust: 100%;
+        /* Cambiamos el valor a 80% para una reducción mayor */
+        font-size: 80%;
+      }
+    }
+ .splash { 
+        position: fixed; 
+        inset: 0; 
+        z-index: 9999; 
+        background-color: #000; 
+        transition: opacity 0.5s ease-out, visibility 0.5s ease-out; 
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
     .splash-video { width: 100%; height: 100%; object-fit: contain; }
     .splash-hidden { opacity: 0; visibility: hidden; }
   </style>
@@ -727,6 +743,41 @@ const StarIcon = ({ className, ...props }) => {
       const [dayModalDate, setDayModalDate] = React.useState(null);
       const [eventModal, setEventModal] = React.useState({ open: false, date: null, type: null, existing: null });
 
+      // ========= INICIO DE LA LÓGICA DE AUTO-SCROLL MEJORADA =========
+      React.useEffect(() => {
+          // No hacemos nada si no hay ref, si no es móvil, o si no hay usuario
+          if (!calendarRef.current || window.innerWidth >= 640 || !user) {
+              return;
+          }
+
+          const lastEntry = user.entries?.slice().sort((a, b) => new Date(a.date) - new Date(b.date)).pop();
+          let targetDate;
+
+          if (lastEntry) {
+              const lastRegisteredDate = new Date(lastEntry.date + 'T00:00:00');
+              const nextDayToRegister = new Date(lastRegisteredDate);
+              nextDayToRegister.setDate(lastRegisteredDate.getDate() + 1);
+              
+              if (nextDayToRegister <= new Date()) {
+                  targetDate = nextDayToRegister;
+              } else {
+                  targetDate = lastRegisteredDate;
+              }
+          } else {
+              targetDate = new Date();
+          }
+
+          const dateToScrollString = fmt(targetDate);
+          const targetElement = calendarRef.current.querySelector(`button[data-date="${dateToScrollString}"]`);
+
+          if (targetElement) {
+              setTimeout(() => {
+                  targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              }, 150); // Un retardo ligeramente mayor para máxima compatibilidad
+          }
+      }, [user, date]); // Se ejecuta cuando los datos del usuario o el mes visible cambian
+      // ========= FIN DE LA LÓGICA DE AUTO-SCROLL =========
+
       const handleOpenEventModal = (dayStr, eventType = null) => {
           const dayEvents = getEventsForDay(new Date(dayStr + 'T00:00:00'));
           const existing = eventType ? dayEvents.find(e => e.type === eventType) : dayEvents[0];
@@ -960,14 +1011,12 @@ const StarIcon = ({ className, ...props }) => {
                                 <span className="text-3xl font-medium leading-none text-gray-800 dark:text-white">{d.getDate()}</span>
                             </div>
 
-                            {/* ========= INICIO DE LA CORRECCIÓN ========= */}
                             <div>
                                 {entry?.weight != null && (
                                     <div className="flex items-center gap-2">
                                         <div>
                                             <div className="flex items-baseline gap-2">
                                                 <span className="text-2xl font-bold text-gray-800 dark:text-white">{entry.weight.toFixed(1)} kg</span>
-                                                {/* La estrella se muestra aquí si hay peso */}
                                                 {specialEvent && <StarIcon className="w-6 h-6"/>}
                                             </div>
                                             {diff != null && (
@@ -978,12 +1027,10 @@ const StarIcon = ({ className, ...props }) => {
                                         </div>
                                     </div>
                                 )}
-                                {/* Se añade este bloque nuevo: si NO hay peso, pero SÍ hay un evento especial, se muestra la estrella sola. */}
                                 {(!entry || entry.weight == null) && specialEvent && (
                                     <StarIcon className="w-7 h-7"/>
                                 )}
                             </div>
-                            {/* ========= FIN DE LA CORRECIÓNN ========= */}
                         </div>
                         
                         <div className="absolute bottom-2 right-2 flex flex-row-reverse flex-wrap-reverse items-end justify-start gap-2" style={{maxWidth: isSundayWithIcons ? 'calc(100% - 9rem)' : 'calc(100% - 5rem)' }}>
@@ -1241,7 +1288,7 @@ const ProfileView = ({user, setUser, theme})=>{
             URL.revokeObjectURL(a.href);
         };
         
-        const exportPDF = async (user, theme) => {
+         const exportPDF = async (user, theme) => {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF('p', 'mm', 'a4');
             const pageWidth = doc.internal.pageSize.getWidth();
@@ -1326,7 +1373,6 @@ const ProfileView = ({user, setUser, theme})=>{
             let kpiY = kpiBoxY + 10; const xLabel1 = 20, xValue1 = 80, xLabel2 = 110, xValue2 = 165; doc.setFontSize(11); doc.setFont('helvetica', 'normal'); doc.text('Progreso alcanzado:', xLabel1, kpiY); doc.text(`${pct.toFixed(1)} %`, xValue1, kpiY); doc.text('Media consumo agua:', xLabel2, kpiY); doc.text(`${avgWater.toFixed(2)} L / día`, xValue2, kpiY); kpiY += 8; doc.text('Peso perdido:', xLabel1, kpiY); doc.text(`${lost.toFixed(1)} kg`, xValue1, kpiY); doc.text('Ejercicio semanal:', xLabel2, kpiY); doc.text(`${avgExWeek.toFixed(1)} h / sem`, xValue2, kpiY); kpiY += 8; doc.text('Peso actual:', xLabel1, kpiY); doc.text(`${lastW.toFixed(1)} kg`, xValue1, kpiY); doc.text('Media de sueño:', xLabel2, kpiY); doc.text(`${avgSleep.toFixed(1)} h / día`, xValue2, kpiY); kpiY += 8; doc.text('Peso por perder:', xLabel1, kpiY); doc.text(`${(Math.max(0, lastW - user.profile.targetWeight)).toFixed(1)} kg`, xValue1, kpiY); const targetIMC = h > 0 ? (user.profile.targetWeight/(h*h)).toFixed(1) : 'N/A'; doc.text('IMC (ini/act/obj):', xLabel2, kpiY); doc.text(h > 0 ? `${(firstW/(h*h)).toFixed(1)} / ${(lastW/(h*h)).toFixed(1)} / ${targetIMC}` : 'N/A', xValue2, kpiY); kpiY += 14; doc.setFont('helvetica', 'bold'); doc.text('Días pendientes hasta objetivo:', xLabel1, kpiY); doc.text(projNeutro ? humanizeDays(projNeutro.daysToFinal) : 'N/A', xValue1, kpiY); kpiY += 6; doc.text('Fecha de objetivo alcanzado:', xLabel1, kpiY); doc.text(projNeutro ? new Date(projNeutro.etaFinal).toLocaleDateString('es-ES',{day:'2-digit', month:'long', year:'numeric'}) : '—', xValue1, kpiY);
             y = kpiBoxY + 76 + 10;
             
-            // --- GRÁFICOS Y TABLA ---
             const renderChartToImage = async (chartConfig) => {
                 const container = document.getElementById('pdf-charts-container');
                 if (!container) return null;
@@ -1343,12 +1389,9 @@ const ProfileView = ({user, setUser, theme})=>{
 
             const commonOptions = { responsive: false, maintainAspectRatio: false, animation: { duration: 0 }, plugins:{ legend:{ labels:{ color: '#1f2937' }}}, scales:{ x:{ ticks:{ color: '#1f2937' }, grid:{ color:'rgba(0,0,0,0.1)' }}, y:{ ticks:{ color: '#1f2937' }, grid:{ color:'rgba(0,0,0,0.1)' }}}};
             
-            // --- CAMBIO 1: Lógica para decidir si añadir una nueva página ---
-            // Se calcula si el gráfico cabe en el espacio restante de la página 1.
-            // Altura del gráfico (91) + Margen inferior (10)
             if (y + 91 + 10 > pageHeight) {
                 doc.addPage();
-                y = 20; // Reinicia 'y' para la nueva página
+                y = 20;
             }
             
             const chartEntries = user.entries.slice(-12);
@@ -1360,13 +1403,34 @@ const ProfileView = ({user, setUser, theme})=>{
                 const dietColors = { 'estricta': 'rgba(34, 197, 94, 0.35)', 'correcta': 'rgba(59, 130, 246, 0.35)', 'incorrecta': 'rgba(245, 158, 11, 0.35)', 'mala': 'rgba(239, 68, 68, 0.35)' };
                 const weightsData = chartEntries.map(e => e.weight);
                 const shiftedWeights = chartEntries.length > 0 ? [...weightsData.slice(1), null] : [];
-                const habitsConfig = {type:'bar', data:{ labels: chartEntries.map(e => new Date(e.date + 'T00:00:00').toLocaleDateString('es-ES', {weekday:'short'})), datasets:[ {type: 'line', label:'Peso(kg)', yAxisID:'y', data: shiftedWeights, borderColor: 'rgba(0, 0, 0, 1)', backgroundColor: 'rgba(0, 0, 0, 0.1)', borderWidth:4, tension:.3, order: 0}, {label:'Calidad Dieta', yAxisID: 'y1', data: chartEntries.map(e => dietMap[e.diet] || 0), backgroundColor: chartEntries.map(e => dietColors[e.diet] || 'rgba(128,128,128,0.5)'), order: 4 }, {type: 'line', label:'Ejercicio(h)', yAxisID:'y1', data:chartEntries.map(e=>exerciseHours(e.exerciseTime)), borderColor:'rgb(239, 68, 68)', borderWidth:2.5, fill: false, order: 1}, {type: 'line', label:'Sueño(h)', yAxisID:'y1', data:chartEntries.map(e=>sleepHours(e.sleep)), borderColor:'rgb(147,51,234)', borderWidth:2.5, fill: false, order: 2}, {type: 'line', label:'Agua(L)', yAxisID:'y1', data:chartEntries.map(e=>waterLiters(e.water)), borderColor:'rgb(6,182,212)', borderWidth:2.5, fill: false, order: 3} ] }, options:{...commonOptions, scales:{ ...commonOptions.scales, y1:{position:'right', title:{display:true, text:'Hábitos', color:'#1f2937'}, grid:{drawOnChartArea:false}, ticks: { stepSize: 1, color:'#1f2937' }}}} };
+
+                // ========= INICIO DE LA CORRECCIÓN =========
+                // 1. Calculamos el rango de peso, igual que en la app.
+                const visibleWeights = weightsData.filter(w => w != null);
+                const minWeight = visibleWeights.length ? Math.min(...visibleWeights) : null;
+                const maxWeight = visibleWeights.length ? Math.max(...visibleWeights) : null;
+                // ========= FIN DE LA CORRECCIÓN =========
+
+                const habitsConfig = {type:'bar', data:{ labels: chartEntries.map(e => new Date(e.date + 'T00:00:00').toLocaleDateString('es-ES', {weekday:'short'})), datasets:[ {type: 'line', label:'Peso(kg)', yAxisID:'y', data: shiftedWeights, borderColor: 'rgba(0, 0, 0, 1)', backgroundColor: 'rgba(0, 0, 0, 0.1)', borderWidth:4, tension:.3, order: 0}, {label:'Calidad Dieta', yAxisID: 'y1', data: chartEntries.map(e => dietMap[e.diet] || 0), backgroundColor: chartEntries.map(e => dietColors[e.diet] || 'rgba(128,128,128,0.5)'), order: 4 }, {type: 'line', label:'Ejercicio(h)', yAxisID:'y1', data:chartEntries.map(e=>exerciseHours(e.exerciseTime)), borderColor:'rgb(239, 68, 68)', borderWidth:2.5, fill: false, order: 1}, {type: 'line', label:'Sueño(h)', yAxisID:'y1', data:chartEntries.map(e=>sleepHours(e.sleep)), borderColor:'rgb(147,51,234)', borderWidth:2.5, fill: false, order: 2}, {type: 'line', label:'Agua(L)', yAxisID:'y1', data:chartEntries.map(e=>waterLiters(e.water)), borderColor:'rgb(6,182,212)', borderWidth:2.5, fill: false, order: 3} ] }, 
+                    options:{...commonOptions, scales:{ 
+                        ...commonOptions.scales, 
+                        // 2. Aplicamos el rango calculado al eje Y del peso.
+                        y: { 
+                            position: 'left', 
+                            title: { display: true, text: 'Peso (kg)', color: '#1f2937' }, 
+                            min: minWeight ? Math.floor(minWeight - 1) : undefined, 
+                            max: maxWeight ? Math.ceil(maxWeight + 1) : undefined, 
+                            ticks: { color: '#1f2937' }, 
+                            grid: { color: 'rgba(0,0,0,0.1)' } 
+                        },
+                        y1:{position:'right', title:{display:true, text:'Hábitos', color:'#1f2937'}, grid:{drawOnChartArea:false}, ticks: { stepSize: 1, color:'#1f2937' }}
+                    }}
+                };
                 const habitsChartImg = await renderChartToImage(habitsConfig);
                 doc.addImage(habitsChartImg, 'PNG', 14, y, 182, 91);
                 y += 96;
             }
 
-            // Se añade una nueva página ANTES del siguiente contenido para asegurar que no se solape
             doc.addPage();
             y = 20;
 
@@ -1387,47 +1451,40 @@ const ProfileView = ({user, setUser, theme})=>{
                 doc.text('Últimos 20 registros', 14, y);
                 y += 8;
                 
-                // CAMBIO 2.1: Modificamos las cabeceras. Eliminamos las de ejercicio del array principal.
                 const cols = ['Fecha','Peso','Glucosa','','','Sueño','Ayuno','Dieta','Agua'];
-                // La constante 'cw' se mantiene igual, ya que define el ancho de los DATOS, no de los títulos.
-                // Se incluye el valor que faltaba del error anterior.
                 const cw = [22, 15, 17, 24, 25, 18, 25, 20, 15];
                 
-                // CAMBIO 2.2: Creamos una función de dibujado de cabecera personalizada.
                 const drawTableHeaders = () => {
                     doc.setFontSize(9); doc.setFont('helvetica','bold');
                     let x = 14;
                     const initialY = y;
 
-                    // Dibuja los títulos simples
                     cols.forEach((c, i) => {
-                        // Saltamos las columnas de ejercicio que ahora son personalizadas
                         if (i !== 3 && i !== 4) {
                             doc.text(c, x + cw[i] / 2, initialY, { align: 'center' });
                         }
                         x += cw[i];
                     });
 
-                    // Dibuja la cabecera de ejercicio de 2 niveles
                     const exerciseX_start = 14 + cw[0] + cw[1] + cw[2];
                     const exerciseWidth_total = cw[3] + cw[4];
                     doc.text('Tipo de ejercicio', exerciseX_start + exerciseWidth_total / 2, initialY, { align: 'center' });
                     
                     const subHeaderY = initialY + 5;
-                    doc.setFont('helvetica', 'normal'); // Subtítulos en normal
+                    doc.setFont('helvetica', 'normal');
                     doc.text('Fuerza', exerciseX_start + cw[3] / 2, subHeaderY, { align: 'center' });
                     doc.text('Anaeróbico', exerciseX_start + cw[3] + cw[4] / 2, subHeaderY, { align: 'center' });
                     
-                    y = subHeaderY + 3; // Posición para la línea
+                    y = subHeaderY + 3;
                     doc.line(14, y, 14 + cw.reduce((a, b) => a + b, 0), y);
-                    y += 4; // Espacio después de la línea
+                    y += 4;
                     doc.setFont('helvetica','normal');
                 };
 
                 drawTableHeaders();
 
                 rows.forEach(r => {
-                    if (y > 280) { // Si no cabe una fila más, crea una página nueva
+                    if (y > 280) {
                         doc.addPage();
                         y = 20;
                         drawTableHeaders();
@@ -1553,49 +1610,6 @@ const ProfileView = ({user, setUser, theme})=>{
           }
       }, [view, current]);
       
-      // ========= INICIO DE LA LÓGICA DE AUTO-SCROLL MEJORADA =========
-      React.useEffect(() => {
-          // Solo se ejecuta si estamos en la pestaña del calendario, en un dispositivo móvil.
-          if (tab === 'calendar' && calendarRef.current && window.innerWidth < 640) {
-              
-              // 1. Encontrar la última entrada registrada
-              const lastEntry = current?.entries?.slice().sort((a, b) => new Date(a.date) - new Date(b.date)).pop();
-              
-              // 2. Determinar la fecha objetivo a la que hacer scroll
-              let targetDate;
-              if (lastEntry) {
-                  // Si hay una última entrada, empezamos desde ahí
-                  const lastRegisteredDate = new Date(lastEntry.date + 'T00:00:00');
-                  const nextDayToRegister = new Date(lastRegisteredDate);
-                  nextDayToRegister.setDate(lastRegisteredDate.getDate() + 1);
-                  
-                  // Si el "siguiente día" no es un día futuro, lo usamos como objetivo.
-                  // Si no, nos quedamos en el último día que ya fue registrado.
-                  if (nextDayToRegister <= new Date()) {
-                      targetDate = nextDayToRegister;
-                  } else {
-                      targetDate = lastRegisteredDate;
-                  }
-              } else {
-                  // Si no hay ninguna entrada, el objetivo es el día de hoy.
-                  targetDate = new Date();
-              }
-
-              const dateToScrollString = fmt(targetDate);
-              const targetElement = calendarRef.current.querySelector(`button[data-date="${dateToScrollString}"]`);
-
-              // 3. Si encontramos el elemento de ese día en el calendario, lo centramos en la pantalla.
-              if (targetElement) {
-                  // Usamos un pequeño retardo para asegurar que el DOM esté completamente listo
-                  setTimeout(() => {
-                    targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                  }, 100);
-              }
-          }
-      }, [tab, calendarDate, current]); // Se ejecuta cada vez que cambia la pestaña, el mes o los datos.
-      // ========= FIN DE LA LÓGICA DE AUTO-SCROLL =========
-
-
       React.useEffect(() => { if (view === 'loading') { if (current) setView('app'); else if (users.length > 0) setView('select'); else setView('welcome'); } }, [users, current, view]);
       const handleLogout = () => { setCurrent(null); setView(users.length > 0 ? 'select' : 'welcome'); };
       const handlePinValidate = (pin) => { 

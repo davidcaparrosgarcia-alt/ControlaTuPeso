@@ -1,6 +1,6 @@
-// sw.js - v2.0 con Estrategia Stale-While-Revalidate
+// sw.js - v2.1 con Estrategia Stale-While-Revalidate
 
-const CACHE_VERSION = 'v2.0.1-beta'; // Versión para el gran cambio
+const CACHE_VERSION = 'v2.1.1-beta'; // Versión para el gran cambio
 const CACHE_NAME = `controlatupeso-cache-${CACHE_VERSION}`;
 
 const urlsToCache = [
