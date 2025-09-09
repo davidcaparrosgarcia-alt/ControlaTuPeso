@@ -53,26 +53,10 @@
     .btn-ghost{border:2px solid rgba(156,163,175,.8)}
     .calendar-cell{border:2px solid rgba(156,163,175,.8)}
     .dark .calendar-cell{border-color:rgba(75,85,99,.9)}
-    .tooltip{position:absolute; left:50%; transform:translateX(-50%); bottom:calc(100% + .5rem); background:#111827; color:#fff; padding:.75rem; font-size:.8rem; border-radius:.5rem; box-shadow:0 10px 15px -3px rgb(0 0 0 / 0.1); display:none; width:280px; max-width:90vw; z-index: 60; text-align:left;}
+  .tooltip{position:absolute; left:50%; transform:translateX(-50%); bottom:calc(100% + .5rem); background:#111827; color:#fff; padding:.75rem; font-size:.8rem; border-radius:.5rem; box-shadow:0 10px 15px -3px rgb(0 0 0 / 0.1); display:none; max-width:280px; min-width: max-content; z-index: 60; text-align:left;}
     .tooltip-wrap:hover .tooltip{display:block}
-@media (max-width: 767px) {
-      html {
-        -webkit-text-size-adjust: 100%;
-        text-size-adjust: 100%;
-        /* Cambiamos el valor a 80% para una reducción mayor */
-        font-size: 60%;
-      }
-    }
- .splash { 
-        position: fixed; 
-        inset: 0; 
-        z-index: 9999; 
-        background-color: #000; 
-        transition: opacity 0.5s ease-out, visibility 0.5s ease-out; 
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
+    @media (max-width: 480px){ .tooltip{left:0; transform:none} }
+    .splash { position: fixed; inset: 0; z-index: 9999; background-color: #000; transition: opacity 0.5s ease-out, visibility 0.5s ease-out; display: flex; align-items: center; justify-content: center; }
     .splash-video { width: 100%; height: 100%; object-fit: contain; }
     .splash-hidden { opacity: 0; visibility: hidden; }
   </style>
@@ -115,8 +99,10 @@
     const SCENARIO_KEY = 'health_tracker_scenario';
     const MASTER_PIN = '0987';
 
-    const EXERCISE_TIME = [ {value:'0min', label:'Sin ejercicio'}, {value:'30min', label:'30m'}, {value:'1h', label:'1h'}, {value:'1h30', label:'1.5h'}, {value:'2h', label:'2h'}, {value:'+2h', label:'+2h'} ];
-    const EXERCISE_TYPE = [ {value:'fuerza', label:'Fuerza'}, {value:'anaerobico', label:'Anaeróbico'} ];
+    const EXERCISE_TIME = [ {value:'0min', label:'Sin ejercicio'}, {value:'15min', label:'15m'}, {value:'30min', label:'30m'}, {value:'45min', label:'45m'}, {value:'1h', label:'1h'}, {value:'1h15', label:'1.15h'}, {value:'1h30', label:'1.5h'}, {value:'2h', label:'2h'}, {value:'+2h', label:'+2h'} ];
+    const EXERCISE_TYPE = [ {value:'fuerza', label:'Fuerza'}, {value:'anaerobico', label:'Anaeróbico'}, {value:'aerobico', label:'Aeróbico'}, {value:'paseo', label:'Caminata'} ];
+    const EXERCISE_INTENSITY = [ {value:'suave', label:'Suave'}, {value:'normal', label:'Normal'}, {value:'intenso', label:'Intenso'} ];
+    const MEDITATION_TIME = [ {value:'0min', label:'Sin meditación'}, {value:'5min', label:'5m'}, {value:'10min', label:'10m'}, {value:'15min', label:'15m'}, {value:'20min', label:'20m'}, {value:'+20min', label:'+20m'} ];
     const SLEEP = [ {value:'<6h', label:'Menos de 6h'}, {value:'6h', label:'6 horas'}, {value:'7h', label:'7 horas'}, {value:'8h', label:'8 horas'}, {value:'+8h', label:'Más de 8h'}, ];
     const FASTING = [ {value:'0h', label:'Sin ayuno'}, {value:'12h', label:'12/12'}, {value:'14h', label:'14/10'}, {value:'16h', label:'16/8'}, {value:'20h', label:'20/4'}, {value:'24h', label:'24 horas'}, ];
     const DIET = [ {value:'estricta', label:'Estricta'}, {value:'correcta', label:'Correcta'}, {value:'incorrecta', label:'Incorrecta'}, {value:'mala', label:'Autodestrucción'}, ];
@@ -124,10 +110,11 @@
     const WEEKDAYS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
 
 
-    const fmt = (d) => { const y = d.getFullYear(), m = String(d.getMonth() + 1).padStart(2, '0'), day = String(d.getDate()).padStart(2, '0'); return `${y}-${m}-${day}`; };
+const fmt = (d) => { const y = d.getFullYear(), m = String(d.getMonth() + 1).padStart(2, '0'), day = String(d.getDate()).padStart(2, '0'); return `${y}-${m}-${day}`; };
     const sleepHours = c => c === '<6h' ? 5.5 : c === '+8h' ? 9 : parseFloat((c || '7h').replace('h', '')) || 7;
-    const exerciseHours = c => c === '0min' ? 0 : c === '30min' ? 0.5 : c === '1h' ? 1 : c === '1h30' ? 1.5 : c === '2h' ? 2 : c === '+2h' ? 2.5 : 0;
+    const exerciseHours = c => { switch(c) { case '0min': return 0; case '15min': return 0.25; case '30min': return 0.5; case '45min': return 0.75; case '1h': return 1; case '1h15': return 1.25; case '1h30': return 1.5; case '2h': return 2; case '+2h': return 2.5; default: return 0; } };
     const waterLiters = c => c === '+2L' ? 2.5 : parseFloat((c || '1.5L').replace('L', '').replace(',', '.')) || 1.5;
+    const meditationMinutes = c => { switch(c) { case '0min': return 0; case '5min': return 5; case '10min': return 10; case '15min': return 15; case '20min': return 20; case '+20min': return 25; default: return 0; } };
     const humanizeDays = (n) => {
       if (!isFinite(n) || n < 0) return '—'; if (n < 1) return '¡Hoy!'; const days = Math.round(n); if (days < 30) return `${days} día${days > 1 ? 's' : ''}`; const months = Math.floor(days / 30); const remDays = days % 30; if (remDays === 0) return `${months} ${months === 1 ? 'mes' : 'meses'}`; return `${months} ${months === 1 ? 'mes' : 'meses'} y ${remDays} día${remDays > 1 ? 's' : ''}`;
     };
@@ -412,6 +399,70 @@ const StarIcon = ({ className, ...props }) => {
       );
     };
 
+const WalkIcon = ({ className, ...props }) => ( <svg version="1.0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" preserveAspectRatio="xMidYMid meet" className={className} {...props} fill="currentColor"> <g transform="translate(0.000000,512.000000) scale(0.100000,-0.100000)"> <path d="M2418 5101 c-155 -50 -281 -184 -324 -345 -16 -60 -18 -212 -3 -276 43 -189 217 -360 407 -399 261 -54 522 112 581 369 15 67 13 208 -4 275 -45 170 -175 312 -340 370 -89 31 -229 34 -317 6z"/> <path d="M2322 4001 c-30 -10 -66 -27 -80 -38 -15 -11 -220 -151 -457 -313 -236 -161 -443 -305 -458 -319 -16 -14 -35 -38 -43 -53 -18 -35 -324 -911 -336 -960 -18 -83 27 -180 102 -218 74 -38 191 -20 242 37 24 26 62 113 227 518 l143 350 195 100 c147 75 213 116 270 164 85 73 82 58 -11 -58 l-63 -78 -6 -209 c-4 -115 -16 -276 -27 -359 -11 -82 -27 -211 -35 -285 -9 -74 -41 -326 -72 -560 l-56 -425 -254 -495 c-139 -272 -258 -512 -264 -533 -22 -82 15 -180 89 -232 40 -28 50 -30 126 -30 72 0 87 3 122 26 30 20 116 138 374 514 184 269 342 502 351 519 18 33 150 577 179 736 l17 95 7 -56 c5 -30 6 -87 4 -125 l-4 -69 150 -200 151 -200 161 -556 c88 -306 170 -572 180 -590 55 -93 183 -126 289 -74 73 35 115 102 115 185 0 94 -187 1238 -211 1290 -12 25 -137 232 -280 461 l-258 415 10 155 c6 85 8 251 5 369 -5 191 -4 211 8 179 8 -20 22 -71 31 -112 15 -69 21 -80 66 -122 89 -83 80 -81 551 -95 230 -7 432 -10 450 -6 48 9 101 51 128 98 28 50 32 137 7 184 -23 45 -77 93 -117 104 -29 9 -316 38 -643 66 l-78 7 -306 369 c-168 203 -320 380 -337 393 -53 40 -110 55 -210 55 -62 -1 -108 -7 -144 -19z"/> </g> </svg> );
+const MeditationIcon = ({ className, ...props }) => (
+      <svg version="1.0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 514 514" preserveAspectRatio="xMidYMid meet" className={className} {...props}>
+        <style>
+            {`
+              .meditation-main {
+                fill: #000000; /* Negro para modo claro */
+              }
+              .dark .meditation-main {
+                fill: #e5e7eb; /* Gris claro para modo oscuro */
+              }
+              .meditation-aura {
+                fill: #F0BC5E; /* Dorado para modo claro */
+              }
+              .dark .meditation-aura {
+                fill: #fde047; /* Amarillo más brillante para modo oscuro */
+              }
+            `}
+        </style>
+        <g className="meditation-main" stroke="none">
+          <path d="M 248.951 10.035 C 232.653 12.510 218.041 22.318 209.521 36.500 C 202.651 47.935 201.498 53.773 201.519 77.000 C 201.542 102.816 203.301 109.733 213.114 122.592 L 217.000 127.685 216.992 137.592 L 216.983 147.500 188.742 155.878 C 173.209 160.486 158.035 165.404 155.022 166.808 C 148.285 169.948 141.024 177.045 137.564 183.874 C 135.656 187.640 132.988 198.813 127.564 225.754 C 123.495 245.964 120.241 262.546 120.333 262.603 C 120.425 262.659 127.700 264.489 136.500 266.668 L 152.500 270.631 152.430 279.565 C 152.348 289.900 149.764 298.716 142.482 313.500 C 137.242 324.139 133.347 328.415 116.587 341.930 L 104.145 351.963 97.615 348.907 C 82.650 341.904 67.173 346.771 60.404 360.607 C 54.920 371.815 57.859 386.760 66.965 393.972 C 71.287 397.395 76.906 400.000 79.968 400.000 C 83.323 400.000 82.310 401.349 76.250 404.949 C 59.938 414.642 49.706 432.585 49.706 451.500 C 49.706 464.177 53.419 474.463 61.709 484.750 L 65.134 489.000 53.067 489.000 L 41.000 489.000 41.000 497.000 L 41.000 505.000 257.000 505.000 L 473.000 505.000 473.000 497.000 L 473.000 489.000 460.933 489.000 L 448.866 489.000 452.291 484.750 C 460.581 474.463 464.294 464.177 464.294 451.500 C 464.294 432.585 454.062 414.642 437.750 404.949 C 431.690 401.349 430.677 400.000 434.032 400.000 C 437.094 400.000 442.713 397.395 447.035 393.972 C 456.141 386.760 459.080 371.815 453.596 360.607 C 446.827 346.771 431.350 341.904 416.385 348.907 L 409.855 351.963 397.413 341.930 C 380.385 328.199 376.643 324.097 371.484 313.500 C 364.183 298.504 361.651 289.838 361.570 279.565 L 361.500 270.631 377.500 266.668 C 386.300 264.489 393.575 262.659 393.667 262.603 C 393.759 262.546 390.505 245.964 386.436 225.754 C 381.012 198.813 378.344 187.640 376.436 183.874 C 372.976 177.045 365.715 169.948 358.978 166.808 C 355.965 165.404 340.791 160.486 325.258 155.878 L 297.017 147.500 297.008 137.592 L 297.000 127.685 300.886 122.592 C 310.732 109.690 312.496 102.764 312.498 77.000 C 312.500 53.752 311.364 48.049 304.393 36.325 C 293.283 17.641 270.380 6.781 248.951 10.035 M 226.683 164.387 C 232.047 168.900 242.784 174.063 249.889 175.544 C 256.173 176.854 257.827 176.854 264.111 175.544 C 271.216 174.063 281.953 168.900 287.317 164.387 C 288.877 163.074 290.648 162.000 291.253 162.000 C 293.580 162.000 349.480 179.204 353.018 181.009 C 357.336 183.212 361.693 188.043 363.716 192.872 C 365.745 197.715 376.146 250.256 375.250 251.136 C 374.632 251.743 331.254 263.000 329.533 263.000 C 329.240 263.000 329.000 257.375 329.000 250.500 L 329.000 238.000 320.853 238.000 L 312.705 238.000 313.298 268.250 C 313.624 284.888 314.374 301.425 314.964 305.000 C 316.559 314.649 319.687 327.778 321.978 334.435 C 323.090 337.668 324.000 340.721 324.000 341.220 C 324.000 341.719 319.838 344.084 314.750 346.476 C 273.580 365.836 240.420 365.836 199.250 346.476 C 194.163 344.084 190.000 341.727 190.000 341.239 C 190.000 340.750 191.097 337.124 192.439 333.180 C 199.086 313.636 200.928 295.410 200.971 248.750 L 201.000 217.000 193.000 217.000 L 185.000 217.000 185.000 240.000 C 185.000 252.650 184.760 263.000 184.467 263.000 C 182.746 263.000 139.368 251.743 138.750 251.136 C 137.854 250.256 148.255 197.715 150.284 192.872 C 152.191 188.321 156.561 183.289 160.369 181.259 C 163.704 179.482 219.351 162.212 222.173 162.079 C 223.094 162.036 225.123 163.074 226.683 164.387 M 437.804 424.310 C 447.326 433.581 451.380 449.208 447.582 462.000 C 444.159 473.529 433.662 484.125 422.346 487.474 C 414.489 489.800 282.533 489.745 271.208 487.412 C 254.505 483.970 240.358 476.442 226.500 463.622 L 219.500 457.146 238.490 438.073 C 248.935 427.583 257.790 419.000 258.169 419.000 C 258.548 419.000 275.347 428.900 295.500 441.000 C 315.653 453.100 332.303 463.000 332.499 463.000 C 332.980 463.000 340.000 451.404 340.000 450.610 C 340.000 450.264 337.750 448.597 335.000 446.905 C 332.250 445.213 330.000 443.542 330.000 443.193 C 330.000 442.843 339.858 432.644 351.908 420.529 C 371.049 401.282 373.968 397.932 375.022 394.000 C 375.685 391.525 376.380 388.957 376.566 388.293 C 377.057 386.540 432.508 419.153 437.804 424.310 M 138.022 390.309 C 138.081 396.179 142.497 401.206 182.643 441.100 C 205.114 463.431 225.688 483.231 228.362 485.100 L 233.225 488.500 165.040 488.757 C 88.957 489.044 91.206 489.220 81.058 482.166 C 66.000 471.698 60.687 451.213 68.777 434.815 C 70.491 431.342 73.829 426.614 76.196 424.309 C 80.538 420.080 135.814 386.952 137.250 387.718 C 137.663 387.938 138.010 389.104 138.022 390.309 M 268.416 26.513 C 281.429 30.461 291.539 40.571 295.487 53.584 C 297.590 60.515 297.590 93.485 295.487 100.416 C 290.273 117.603 274.946 128.978 257.000 128.978 C 239.054 128.978 223.727 117.603 218.513 100.416 C 216.410 93.485 216.410 60.515 218.513 53.584 C 222.332 40.994 231.831 31.163 244.274 26.922 C 250.753 24.713 261.863 24.525 268.416 26.513 M 206.987 366.531 C 245.692 381.399 284.245 378.989 323.515 359.244 L 331.504 355.227 336.066 359.364 L 340.629 363.500 329.402 374.144 C 318.718 384.273 317.916 384.823 312.837 385.505 C 305.742 386.458 301.205 388.426 297.165 392.301 C 292.609 396.671 291.030 400.025 289.650 408.267 C 288.961 412.381 287.845 415.695 286.960 416.253 C 285.831 416.966 281.830 415.027 271.172 408.604 C 263.320 403.872 256.589 400.000 256.214 400.000 C 255.838 400.000 250.469 405.048 244.281 411.218 L 233.031 422.436 229.118 418.615 C 225.792 415.367 225.100 413.947 224.505 409.147 C 222.765 395.109 215.089 387.331 201.163 385.493 C 196.078 384.822 195.296 384.286 184.598 374.144 L 173.371 363.500 177.934 359.364 L 182.496 355.227 190.485 359.244 C 194.879 361.453 202.304 364.732 206.987 366.531 M 177.500 276.834 L 184.500 278.622 184.794 286.445 C 185.303 299.952 181.420 320.113 175.009 337.246 C 171.469 346.708 167.608 349.628 134.113 368.174 L 103.725 385.000 91.763 385.000 L 79.800 385.000 76.400 381.600 C 73.405 378.605 73.000 377.580 73.000 373.000 C 73.000 368.420 73.405 367.395 76.400 364.400 C 81.296 359.504 85.517 359.733 97.034 365.517 L 106.029 370.035 123.324 356.142 C 148.392 336.004 152.596 330.690 161.800 307.500 C 165.803 297.413 167.341 291.281 168.507 280.750 C 168.857 277.588 169.449 275.010 169.822 275.023 C 170.195 275.035 173.650 275.850 177.500 276.834 M 345.493 280.750 C 346.659 291.281 348.197 297.413 352.200 307.500 C 361.404 330.690 365.608 336.004 390.676 356.142 L 407.971 370.035 416.966 365.517 C 428.483 359.733 432.704 359.504 437.600 364.400 C 440.595 367.395 441.000 368.420 441.000 373.000 C 441.000 377.580 440.595 378.605 437.600 381.600 L 434.200 385.000 422.237 385.000 L 410.275 385.000 379.887 368.174 C 346.392 349.628 342.531 346.708 338.991 337.246 C 332.815 320.739 329.000 301.571 329.000 287.045 L 329.000 279.077 332.750 278.100 C 334.813 277.562 338.075 276.685 340.000 276.151 C 341.925 275.617 343.805 275.140 344.178 275.090 C 344.551 275.041 345.143 277.588 345.493 280.750 M 176.376 386.973 C 187.170 397.475 190.258 399.343 198.701 400.476 C 206.583 401.534 209.000 404.440 209.000 412.861 L 209.000 419.450 215.732 426.234 L 222.464 433.018 215.712 439.759 L 208.960 446.500 180.980 418.430 C 153.581 390.943 153.000 390.276 153.000 386.316 C 153.000 380.760 156.713 377.000 162.199 377.000 C 165.820 377.000 166.923 377.776 176.376 386.973 M 358.364 379.636 C 360.338 381.611 361.000 383.283 361.000 386.294 C 361.000 390.198 360.349 390.970 338.799 412.658 C 326.588 424.946 316.254 435.000 315.834 435.000 C 314.552 435.000 300.000 425.902 300.000 425.099 C 300.000 424.686 301.125 423.292 302.500 422.000 C 304.683 419.949 305.000 418.804 305.000 412.962 C 305.000 404.431 307.386 401.538 315.299 400.476 C 323.742 399.343 326.830 397.475 337.624 386.973 C 347.077 377.776 348.180 377.000 351.801 377.000 C 354.710 377.000 356.410 377.683 358.364 379.636 M 257.000 144.217 C 264.408 144.217 268.096 143.681 273.750 141.785 L 281.000 139.353 281.000 144.670 C 281.000 149.768 280.825 150.117 276.750 153.118 C 270.149 157.981 262.585 161.000 257.000 161.000 C 251.415 161.000 243.851 157.981 237.250 153.118 C 233.175 150.117 233.000 149.768 233.000 144.670 L 233.000 139.353 240.250 141.785 C 245.904 143.681 249.592 144.217 257.000 144.217 "/>
+        </g>
+        <g className="meditation-aura" stroke="none">
+          <path d="M 306.495 171.205 C 300.717 179.974 287.974 194.798 277.874 204.500 C 256.566 224.968 235.288 239.132 207.250 251.513 L 201.000 254.273 200.838 269.387 C 200.660 285.882 200.527 289.074 199.585 299.416 C 198.814 307.885 195.385 325.207 193.509 330.111 L 192.127 333.722 202.314 329.951 C 232.606 318.735 251.737 307.952 274.563 289.228 C 286.928 279.085 297.762 268.156 306.825 256.684 C 312.675 249.280 313.000 248.583 313.000 243.434 L 313.000 238.000 316.829 238.000 C 320.651 238.000 320.671 237.979 326.784 227.250 C 336.094 210.912 349.040 180.600 347.381 179.027 C 346.897 178.567 338.664 175.855 329.086 173.001 C 319.508 170.147 311.144 167.609 310.499 167.361 C 309.853 167.113 308.051 168.843 306.495 171.205 "/>
+        </g>
+        <g className="meditation-main" stroke="none">
+          <path d="M 489.000 497.000 L 489.000 505.000 497.000 505.000 L 505.000 505.000 505.000 497.000 L 505.000 489.000 497.000 489.000 L 489.000 489.000 489.000 497.000 "/>
+        </g>
+        <g className="meditation-main" stroke="none">
+          <path d="M 9.000 497.000 L 9.000 505.000 17.000 505.000 L 25.000 505.000 25.000 497.000 L 25.000 489.000 17.000 489.000 L 9.000 489.000 9.000 497.000 "/>
+        </g>
+      </svg>
+    );
+    const AerobicIcon = ({ className, ...props }) => (
+      <svg
+        version="1.0"
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 512 512"
+        preserveAspectRatio="xMidYMid meet"
+        className={`${className} aerobic-icon-themed`}
+        {...props}
+      >
+        <style>
+            {`
+              .aerobic-icon-themed {
+                fill: #1e40af; /* Azul oscuro para modo claro */
+              }
+              .dark .aerobic-icon-themed {
+                fill: #facc15; /* Amarillo suave para modo oscuro */
+              }
+            `}
+        </style>
+        <g
+          transform="translate(0.000000,512.000000) scale(0.100000,-0.100000)"
+          stroke="none"
+        >
+          <path d="M2545 4783 c-147 -53 -252 -164 -289 -308 -55 -207 40 -417 229 -511 254 -125 559 11 629 281 55 208 -41 418 -232 513 -71 34 -82 37 -181 40 -82 2 -117 -2 -156 -15z"/>
+          <path d="M2030 3831 c-86 -23 -765 -326 -809 -360 -19 -15 -43 -44 -54 -65 -36 -70 -33 -112 28 -381 31 -137 61 -257 66 -266 16 -30 69 -68 104 -75 52 -10 101 4 140 37 56 50 60 80 36 271 -12 90 -21 174 -21 184 0 18 17 23 180 47 99 15 185 25 190 22 6 -3 10 -13 10 -21 0 -8 -36 -135 -81 -282 -47 -156 -82 -294 -86 -332 -7 -78 15 -172 55 -242 41 -72 1377 -1525 1423 -1549 75 -38 185 -22 247 35 60 54 82 178 45 249 -9 18 -233 320 -497 672 -265 352 -485 645 -489 652 -4 7 35 198 88 426 102 443 108 487 80 606 -44 187 -203 341 -393 380 -76 16 -187 13 -262 -8z"/>
+          <path d="M3260 3468 c-19 -5 -97 -37 -173 -70 l-138 -59 -46 40 c-25 23 -49 41 -52 41 -3 0 -6 -33 -7 -73 0 -42 -14 -128 -32 -208 -18 -75 -32 -143 -32 -152 0 -31 106 -54 171 -37 48 13 423 218 469 257 37 31 64 102 56 145 -19 103 -104 148 -216 116z"/>
+          <path d="M4544 3399 c-253 -133 -433 -316 -520 -530 -66 -162 -94 -337 -76 -487 6 -49 74 -411 151 -805 78 -393 141 -735 141 -759 0 -57 -27 -106 -79 -143 l-43 -30 -1683 -5 c-1681 -5 -1684 -5 -1711 -26 -44 -32 -66 -68 -71 -117 -7 -61 25 -128 75 -159 l37 -23 1645 -3 c1192 -2 1668 0 1727 9 196 27 356 161 413 347 39 126 35 157 -136 1025 -166 842 -173 887 -141 995 44 146 131 244 313 352 209 123 226 141 226 230 0 79 -44 139 -117 159 -59 16 -67 15 -151 -30z"/>
+          <path d="M805 2362 c-48 -23 -69 -45 -90 -95 -28 -68 -13 -146 38 -196 37 -36 760 -494 827 -524 68 -30 163 -27 234 7 30 15 67 41 81 58 30 35 135 240 135 262 0 8 -73 94 -162 191 -90 98 -178 198 -195 223 -18 25 -34 47 -37 49 -2 2 -23 -52 -46 -122 -35 -106 -45 -125 -59 -120 -10 3 -146 66 -302 141 -314 150 -351 161 -424 126z"/>
+        </g>
+      </svg>
+    );
 
     // ====================== Gestión de Datos de Usuario ======================
   function useUsers(){ 
@@ -516,89 +567,119 @@ const StarIcon = ({ className, ...props }) => {
     // ====================== Componentes de Onboarding y Selección de Usuario ======================
     const ImportUserModal = ({open,onClose,onImport})=>{ const input=React.useRef(null); const handle=(file)=>{ if(!file) return; const reader = new FileReader(); reader.onload=(e)=>{ try{ const data=JSON.parse(e.target.result); if(!data.profile?.name || !data.profile.pin) throw new Error(); data.entries = Array.isArray(data.entries)?data.entries:[]; data.events = Array.isArray(data.events)?data.events:[]; if(!data.profile.createdAt) data.profile.createdAt=new Date().toISOString(); onImport(data); }catch{ alert('Archivo JSON inválido.'); } }; reader.readAsText(file); }; return (<Modal open={open} onClose={onClose} customHeader={<LoginHeader/>}><div className="p-4"><h3 className="text-lg font-semibold text-gray-800 dark:text-white text-center mb-4">Importar usuario desde JSON</h3><div className="rounded-lg border-2 border-dashed border-gray-400 p-8 text-center space-y-3"><p className="text-lg text-gray-800 dark:text-white">Arrastra tu archivo aquí</p><p className="text-sm text-gray-500 dark:text-gray-300">o selecciona desde el explorador</p><Button variant="outline" onClick={()=>input.current.click()}>Seleccionar archivo</Button><input ref={input} type="file" accept=".json,application/json" className="hidden" onChange={(e)=>handle(e.target.files[0])}/></div><div className="mt-4 flex justify-end"><Button variant="secondary" onClick={onClose}>Cancelar</Button></div></div></Modal>); };
  const UserSelect = ({users,onChoose,onCreate,onImport, onDelete})=>{ return (<div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gray-50 dark:bg-gray-800"><Modal open={true} onClose={()=>{}} size="lg" customHeader={<LoginHeader/>}><div className="p-4"><h3 className="text-lg font-semibold text-gray-800 dark:text-white text-center mb-4">Seleccionar usuario</h3><div className="grid grid-cols-1 md:grid-cols-2 gap-4">{users.map((u)=>(<Card key={u.profile.id || u.profile.name} className="cursor-pointer hover:shadow-lg transition" onClick={()=>onChoose(u)}><div className="flex items-start justify-between"><h4 className="text-lg font-semibold text-gray-800 dark:text-white">{u.profile.name}</h4><button className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300" onClick={(e)=>{e.stopPropagation(); onDelete(u.profile.id)}} title="Eliminar">🗑</button></div><p className="text-sm text-gray-600 dark:text-gray-300 mt-1">Registros: {u.entries?.length||0}</p></Card>))}</div><div className="mt-4 flex flex-wrap gap-3 justify-end"><Button onClick={onCreate}>Crear nuevo usuario</Button><Button variant="outline" onClick={onImport}>Importar desde JSON</Button></div></div></Modal></div>);};
-    const Onboarding = ({onDone,onCancel})=>{ const [form,setForm]=React.useState({name:'', age:'', biology: 'hombre', height:'', startWeight:'', targetWeight:'', pin:'', pin2:'', med1_name:'', med1_dose:'', med1_start:'', med1_freq: '', med2_name:'', med2_dose:'', med2_start:'', med2_freq:'' }); const change = (k,v)=>setForm(s=>({...s,[k]:v})); const submit=()=>{ if(!form.name.trim() || !form.startWeight || !form.targetWeight || form.pin.length!==4 || form.pin!==form.pin2) return alert('Por favor, completa todos los campos requeridos y asegúrate de que los PIN coincidan.'); const data = { profile:{ name:form.name.trim(), age:parseInt(form.age||'0'), biology: form.biology, height:parseInt(form.height||'0'), startWeight:parseFloat(form.startWeight), targetWeight:parseFloat(form.targetWeight), pin:form.pin, createdAt:new Date().toISOString(), dietStartDate:new Date().toISOString(), medication:{name:form.med1_name||'', dose:form.med1_dose||'', startDate:form.med1_start||null, frequency: parseInt(form.med1_freq) || null}, medication2:{name:form.med2_name||'', dose:form.med2_dose||'', startDate:form.med2_start||null, frequency: parseInt(form.med2_freq) || null} }, entries:[], events: [] }; onDone(data); }; return (<div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gray-50 dark:bg-gray-800"><Modal open={true} onClose={onCancel} size="lg" customHeader={<LoginHeader/>}><div className="p-4 space-y-4">{/* La línea del título <h3> ha sido eliminada de aquí */}<div><h4 className="font-semibold mb-2 text-gray-800 dark:text-white">Datos Personales y de Acceso</h4><div className="grid grid-cols-2 md:grid-cols-3 gap-3 border-t-2 pt-3 dark:border-gray-600"><Input containerClassName="col-span-2 md:col-span-1" label="Nombre" value={form.name} onChange={(e)=>change('name',e.target.value)}/><Input containerClassName="col-span-1" label="Edad" type="number" value={form.age} onChange={(e)=>change('age',e.target.value)}/><Select containerClassName="col-span-1" label="Biología" options={[{value:'hombre', label:'Hombre'}, {value:'mujer', label:'Mujer'}]} value={form.biology} onChange={e=>change('biology', e.target.value)}/><Input containerClassName="col-span-1" label="Altura (cm)" type="number" value={form.height} onChange={(e)=>change('height',e.target.value)}/><Input containerClassName="col-span-1" label="Peso inicial (kg)" type="number" step="0.1" value={form.startWeight} onChange={(e)=>change('startWeight',e.target.value)}/><Input containerClassName="col-span-2 md:col-span-1" label="Peso objetivo (kg)" type="number" step="0.1" value={form.targetWeight} onChange={(e)=>change('targetWeight',e.target.value)}/><Input containerClassName="md:col-span-1" label="PIN (4 dígitos)" type="password" maxLength={4} value={form.pin} onChange={(e)=>change('pin',e.target.value.replace(/[^0-9]/g,''))}/><Input containerClassName="md:col-span-2" label="Confirmar PIN" type="password" maxLength={4} value={form.pin2} onChange={(e)=>change('pin2',e.target.value.replace(/[^0-9]/g,''))}/></div></div><div><h4 className="font-semibold mb-2 text-gray-800 dark:text-white">Medicación (Opcional)</h4><div className="space-y-3 border-t-2 pt-3 dark:border-gray-600"><div className="grid grid-cols-2 md:grid-cols-4 gap-3"><Input label="Medicación 1" value={form.med1_name} onChange={(e)=>change('med1_name',e.target.value)}/><Input label="Dosis 1" value={form.med1_dose} onChange={(e)=>change('med1_dose',e.target.value)}/><Input type="date" label="Día de inicio" value={form.med1_start} onChange={(e)=>change('med1_start', e.target.value)}/><Input type="number" label="Cada ___ días" value={form.med1_freq} onChange={(e)=>change('med1_freq', e.target.value)}/></div><div className="grid grid-cols-2 md:grid-cols-4 gap-3"><Input label="Medicación 2" value={form.med2_name} onChange={(e)=>change('med2_name',e.target.value)}/><Input label="Dosis 2" value={form.med2_dose} onChange={(e)=>change('med2_dose',e.target.value)}/><Input type="date" label="Día de inicio" value={form.med2_start} onChange={(e)=>change('med2_start', e.target.value)}/><Input type="number" label="Cada ___ días" value={form.med2_freq} onChange={(e)=>change('med2_freq', e.target.value)}/></div></div></div><div className="mt-4 flex justify-between"><Button variant="secondary" onClick={onCancel}>Cancelar</Button><Button onClick={submit}>Crear</Button></div></div></Modal></div>);};
+
+// ====================== INICIO DEL CÓDIGO ACTUALIZADO PARA ONBOARDING ======================
+const Onboarding = ({onDone,onCancel})=>{ const [form,setForm]=React.useState({name:'', age:'', biology: 'hombre', height:'', startWeight:'', targetWeight:'', pin:'', pin2:'', med1_name:'', med1_dose:'', med1_start:'', med1_freq: '', med2_name:'', med2_dose:'', med2_start:'', med2_freq:'' }); const change = (k,v)=>setForm(s=>({...s,[k]:v})); const submit=()=>{ if(!form.name.trim() || !form.startWeight || !form.targetWeight || form.pin.length!==4 || form.pin!==form.pin2) return alert('Por favor, completa todos los campos requeridos y asegúrate de que los PIN coincidan.'); const data = { profile:{ name:form.name.trim(), age:parseInt(form.age||'0'), biology: form.biology, height:parseInt(form.height||'0'), startWeight:parseFloat(form.startWeight), targetWeight:parseFloat(form.targetWeight), pin:form.pin, createdAt:new Date().toISOString(), processStartDate:new Date().toISOString(), medication:{name:form.med1_name||'', dose:form.med1_dose||'', startDate:form.med1_start||null, frequency: parseInt(form.med1_freq) || null}, medication2:{name:form.med2_name||'', dose:form.med2_dose||'', startDate:form.med2_start||null, frequency: parseInt(form.med2_freq) || null} }, entries:[], events: [], measurements: [] }; onDone(data); }; return (<div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gray-50 dark:bg-gray-800"><Modal open={true} onClose={onCancel} size="lg" customHeader={<LoginHeader/>}><div className="p-4 space-y-4">{/* La línea del título <h3> ha sido eliminada de aquí */}<div><h4 className="font-semibold mb-2 text-gray-800 dark:text-white">Datos Personales y de Acceso</h4><div className="grid grid-cols-2 md:grid-cols-3 gap-3 border-t-2 pt-3 dark:border-gray-600"><Input containerClassName="col-span-2 md:col-span-1" label="Nombre" value={form.name} onChange={(e)=>change('name',e.target.value)}/><Input containerClassName="col-span-1" label="Edad" type="number" value={form.age} onChange={(e)=>change('age',e.target.value)}/><Select containerClassName="col-span-1" label="Biología" options={[{value:'hombre', label:'Hombre'}, {value:'mujer', label:'Mujer'}]} value={form.biology} onChange={e=>change('biology', e.target.value)}/><Input containerClassName="col-span-1" label="Altura (cm)" type="number" value={form.height} onChange={(e)=>change('height',e.target.value)}/><Input containerClassName="col-span-1" label="Peso inicial (kg)" type="number" step="0.1" value={form.startWeight} onChange={(e)=>change('startWeight',e.target.value)}/><Input containerClassName="col-span-2 md:col-span-1" label="Peso objetivo (kg)" type="number" step="0.1" value={form.targetWeight} onChange={(e)=>change('targetWeight',e.target.value)}/><Input containerClassName="md:col-span-1" label="PIN (4 dígitos)" type="password" maxLength={4} value={form.pin} onChange={(e)=>change('pin',e.target.value.replace(/[^0-9]/g,''))}/><Input containerClassName="md:col-span-2" label="Confirmar PIN" type="password" maxLength={4} value={form.pin2} onChange={(e)=>change('pin2',e.target.value.replace(/[^0-9]/g,''))}/></div></div><div><h4 className="font-semibold mb-2 text-gray-800 dark:text-white">Medicación (Opcional)</h4><div className="space-y-3 border-t-2 pt-3 dark:border-gray-600"><div className="grid grid-cols-2 md:grid-cols-4 gap-3"><Input label="Medicación 1" value={form.med1_name} onChange={(e)=>change('med1_name',e.target.value)}/><Input label="Dosis 1" value={form.med1_dose} onChange={(e)=>change('med1_dose',e.target.value)}/><Input type="date" label="Día de inicio" value={form.med1_start} onChange={(e)=>change('med1_start', e.target.value)}/><Input type="number" label="Cada ___ días" value={form.med1_freq} onChange={(e)=>change('med1_freq', e.target.value)}/></div><div className="grid grid-cols-2 md:grid-cols-4 gap-3"><Input label="Medicación 2" value={form.med2_name} onChange={(e)=>change('med2_name',e.target.value)}/><Input label="Dosis 2" value={form.med2_dose} onChange={(e)=>change('med2_dose',e.target.value)}/><Input type="date" label="Día de inicio" value={form.med2_start} onChange={(e)=>change('med2_start', e.target.value)}/><Input type="number" label="Cada ___ días" value={form.med2_freq} onChange={(e)=>change('med2_freq', e.target.value)}/></div></div></div><div className="mt-4 flex justify-between"><Button variant="secondary" onClick={onCancel}>Cancelar</Button><Button onClick={submit}>Crear</Button></div></div></Modal></div>);};
+// ====================== FIN DEL CÓDIGO ACTUALIZADO PARA ONBOARDING ======================
+
     // --- Componentes de la App Principal ---
+// ====================== INICIO DEL CÓDIGO ACTUALIZADO PARA EVENTMODAL ======================
+const EventModal = ({ open, onClose, date, onSave, onDelete, existingEvent, eventType }) => {
+  const [type, setType] = React.useState(eventType || 'especial');
+  const [frequency, setFrequency] = React.useState('unico');
+  const [message, setMessage] = React.useState('');
 
-    const EventModal = ({ open, onClose, date, onSave, onDelete, existingEvent, eventType }) => {
-      const [type, setType] = React.useState(eventType || 'especial');
-      const [frequency, setFrequency] = React.useState('unico');
+  React.useEffect(() => {
+    if (open) {
+      if (existingEvent) {
+        setType(existingEvent.type || 'especial');
+        setFrequency(existingEvent.frequency || 'unico');
+        setMessage(existingEvent.message || '');
+      } else {
+        setType(eventType || 'especial');
+        setFrequency('unico');
+        setMessage('');
+      }
+    }
+  }, [existingEvent, open, eventType]);
 
-      React.useEffect(() => {
-        if (open) {
-          if (existingEvent) {
-            setType(existingEvent.type || 'especial');
-            setFrequency(existingEvent.frequency || 'unico');
-          } else {
-            setType(eventType || 'especial');
-            setFrequency('unico');
-          }
-        }
-      }, [existingEvent, open, eventType]);
-
-      const handleSubmit = () => {
-        const eventData = {
-          id: existingEvent ? existingEvent.id : Date.now(),
-          date: date,
-          type: type,
-          frequency: frequency
-        };
-        onSave(eventData);
-        onClose();
-      };
-      
-      const handleDelete = () => {
-          onDelete(existingEvent.id);
-          onClose();
-      };
-      
-      const eventOptions = [
-        { value: 'especial', label: 'Día especial', icon: <StarIcon className="w-6 h-6"/> },
-        { value: 'medico', label: 'Visita Médica', icon: <MedicalVisitIcon className="w-6 h-6"/> },
-        { value: 'analisis', label: 'Control/análisis', icon: <AnalysisIcon className="w-6 h-6"/> },
-        { value: 'bebida', label: 'Batido/infusión', icon: <DrinkIcon className="w-6 h-6"/> }
-      ];
-
-      return (
-        <Modal open={open} onClose={onClose} size="md">
-          <div className="flex items-center justify-between border-b-2 border-gray-300 dark:border-gray-600 p-4">
-            <h3 className="text-lg font-semibold text-gray-800 dark:text-white">{existingEvent ? 'Editar Evento' : 'Añadir Evento'} del {new Date(date + 'T00:00:00').toLocaleDateString('es-ES', { day: '2-digit', month: 'long' })}</h3>
-            <button onClick={onClose} className="px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-600">✕</button>
-          </div>
-          <div className="p-4 space-y-4">
-            <div>
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Tipo de Evento</label>
-              <div className="grid grid-cols-2 gap-2 mt-1">
-                {eventOptions.map(opt => (
-                  <button key={opt.value} onClick={() => setType(opt.value)} className={`flex items-center gap-3 p-3 rounded-lg border-2 transition ${type === opt.value ? 'bg-blue-100 dark:bg-blue-900 border-blue-500' : 'bg-gray-50 dark:bg-gray-800 border-gray-400 dark:border-gray-600'}`}>
-                    {opt.icon}
-                    <span className="font-semibold text-gray-800 dark:text-gray-100">{opt.label}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-            <Select label="Frecuencia del Evento" value={frequency} onChange={e => setFrequency(e.target.value)}
-              options={[
-                { value: 'unico', label: 'Evento único' },
-                { value: 'diario', label: 'Diario' },
-                { value: 'semanal', label: 'Semanal' },
-                { value: 'quincenal', label: 'Quincenal' },
-                { value: 'mensual', label: 'Mensual' },
-              ]}
-            />
-            <div className="flex justify-between items-center gap-2 pt-2">
-              {existingEvent ? <Button variant="danger" onClick={handleDelete} type="button">Eliminar</Button> : <div/>}
-              <div className="flex gap-2">
-                <Button variant="secondary" onClick={onClose}>Cancelar</Button>
-                <Button onClick={handleSubmit}>Guardar</Button>
-              </div>
-            </div>
-          </div>
-        </Modal>
-      );
+  const handleSubmit = () => {
+    const eventData = {
+      id: existingEvent ? existingEvent.id : Date.now(),
+      date: date,
+      type: type,
+      frequency: frequency,
+      message: message
     };
+    onSave(eventData);
+    onClose();
+  };
+  
+  const handleDelete = () => {
+      onDelete(existingEvent.id);
+      onClose();
+  };
+  
+  const eventOptions = [
+    { value: 'especial', label: 'Día especial', icon: <StarIcon className="w-6 h-6"/> },
+    { value: 'medico', label: 'Visita Médica', icon: <MedicalVisitIcon className="w-6 h-6"/> },
+    { value: 'analisis', label: 'Control/análisis', icon: <AnalysisIcon className="w-6 h-6"/> },
+    { value: 'bebida', label: 'Batido/infusión', icon: <DrinkIcon className="w-6 h-6"/> }
+  ];
+
+  const placeholderText = React.useMemo(() => {
+      switch(type) {
+          case 'especial': return 'ej: cumpleaños, cena especial, viaje...';
+          case 'medico': return 'ej: lugar y hora...';
+          case 'analisis': return 'ej: medición corporal, lugar y hora....';
+          default: return 'Añadir una nota (opcional)...';
+      }
+  }, [type]);
+
+  return (
+    <Modal open={open} onClose={onClose} size="md">
+      <div className="relative overflow-hidden flex items-center justify-between border-b-2 border-gray-300 dark:border-gray-600 p-4">
+    <div className="absolute inset-0 bg-gradient-to-l from-blue-300 dark:from-blue-900 from-30% to-transparent pointer-events-none"></div>
+       <h3 className="relative text-lg font-semibold text-gray-800 dark:text-white">{existingEvent ? 'Editar Evento' : 'Añadir Evento'} del {new Date(date + 'T00:00:00').toLocaleDateString('es-ES', { day: '2-digit', month: 'long' })}</h3>
+        <button onClick={onClose} className="px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-600">✕</button>
+      </div>
+      <div className="p-4 space-y-4">
+        <div>
+          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Tipo de Evento</label>
+          <div className="grid grid-cols-2 gap-2 mt-1">
+            {eventOptions.map(opt => (
+              <button key={opt.value} onClick={() => setType(opt.value)} className={`flex items-center gap-3 p-3 rounded-lg border-2 transition ${type === opt.value ? 'bg-blue-100 dark:bg-blue-900 border-blue-500' : 'bg-gray-50 dark:bg-gray-800 border-gray-400 dark:border-gray-600'}`}>
+                {opt.icon}
+                <span className="font-semibold text-gray-800 dark:text-gray-100">{opt.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+        <Select label="Frecuencia del Evento" value={frequency} onChange={e => setFrequency(e.target.value)}
+          options={[
+            { value: 'unico', label: 'Evento único' },
+            { value: 'diario', label: 'Diario' },
+            { value: 'semanal', label: 'Semanal' },
+            { value: 'quincenal', label: 'Quincenal' },
+            { value: 'mensual', label: 'Mensual' },
+          ]}
+        />
+        <div>
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Mensaje de Evento</label>
+            <textarea 
+                value={message} 
+                onChange={(e) => setMessage(e.target.value)}
+                placeholder={placeholderText}
+                rows="3"
+                className="mt-1 w-full px-3 py-2 rounded-lg border-2 border-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-white dark:border-gray-500"
+            />
+        </div>
+        <div className="flex justify-between items-center gap-2 pt-2">
+          {existingEvent ? <Button variant="danger" onClick={handleDelete} type="button">Eliminar</Button> : <div/>}
+          <div className="flex gap-2">
+            <Button variant="secondary" onClick={onClose}>Cancelar</Button>
+            <Button onClick={handleSubmit}>Guardar</Button>
+          </div>
+        </div>
+      </div>
+    </Modal>
+  );
+};
+
+// ====================== FIN DEL CÓDIGO ACTUALIZADO PARA EVENTMODAL ======================
 
     const DayModal = ({open, onClose, date, data, onSave, onDelete, onOpenEventModal})=>{
-      const [form,setForm]=React.useState({weight:'', glucose:'', exerciseTime:'0min', exerciseType: 'fuerza', sleep:'7h', fasting:'0h', diet:'correcta', water:'1.5L'});
+      const [form,setForm]=React.useState({weight:'', glucose:'', exerciseTime:'0min', exerciseType: 'fuerza', exerciseIntensity: 'normal', sleep:'7h', fasting:'0h', diet:'correcta', water:'1.5L', meditationTime: '0min', dailySteps: ''});
       const [showConverter, setShowConverter] = React.useState(false);
       const [mmolValue, setMmolValue] = React.useState('');
       const isExistingEntry = React.useMemo(() => data.entries.some(e => e.date === date), [open, date, data.entries]);
@@ -624,10 +705,13 @@ const StarIcon = ({ className, ...props }) => {
                 glucose: sameDay.glucose ?? '',
                 exerciseTime: sameDay.exerciseTime || '0min',
                 exerciseType: sameDay.exerciseType || 'fuerza',
+                exerciseIntensity: sameDay.exerciseIntensity || 'normal',
                 sleep: sameDay.sleep || '7h',
                 fasting: sameDay.fasting || '0h',
                 diet: sameDay.diet || 'correcta',
-                water: sameDay.water || '1.5L'
+                water: sameDay.water || '1.5L',
+                meditationTime: sameDay.meditationTime || '0min',
+                dailySteps: sameDay.dailySteps ?? ''
             });
         } else {
             const yesterday = new Date(new Date(date + 'T00:00:00').setDate(new Date(date + 'T00:00:00').getDate() - 1));
@@ -640,16 +724,19 @@ const StarIcon = ({ className, ...props }) => {
                 glucose: prevDay?.glucose ?? '',
                 exerciseTime: '0min',
                 exerciseType: 'fuerza',
+                exerciseIntensity: 'normal',
                 sleep: '7h',
                 fasting: '0h',
                 diet: 'correcta',
-                water: '1.5L'
+                water: '1.5L',
+                meditationTime: '0min',
+                dailySteps: ''
             });
         }
     }, [open, date, data]);
       
       const change=(k,v)=>setForm(s=>({...s,[k]:v}));
-      const submit=(e)=>{ e.preventDefault(); onSave(date,{ ...form, weight: form.weight!=='' ? parseFloat(form.weight) : null, glucose: form.glucose!=='' ? parseFloat(form.glucose) : null }); onClose(); };
+      const submit=(e)=>{ e.preventDefault(); onSave(date,{ ...form, weight: form.weight!=='' ? parseFloat(form.weight) : null, glucose: form.glucose!=='' ? parseFloat(form.glucose) : null, dailySteps: form.dailySteps !== '' ? parseInt(form.dailySteps) : null }); onClose(); };
       const handleDelete = () => { onDelete(date); onClose(); };
       
       const handleMmolChange = (e) => {
@@ -672,8 +759,9 @@ const StarIcon = ({ className, ...props }) => {
 
       return (<Modal open={open} onClose={onClose} size="lg">
         <div ref={modalRef} onClick={() => {if(showConverter) setShowConverter(false)}}>
-          <div className="flex items-center justify-between border-b-2 border-gray-300 dark:border-gray-600 p-4">
-              <h3 className="text-lg font-semibold text-gray-800 dark:text-white">{`Registro del ${new Date(date+'T00:00:00').toLocaleDateString('es-ES',{weekday:'long',day:'2-digit',month:'long'})}`}</h3>
+         <div className="relative overflow-hidden flex items-center justify-between border-b-2 border-gray-300 dark:border-gray-600 p-4">
+    <div className="absolute inset-0 bg-gradient-to-l from-blue-300 dark:from-blue-900 from-30% to-transparent pointer-events-none"></div>
+             <h3 className="relative text-lg font-semibold text-gray-800 dark:text-white">{`Registro del ${new Date(date+'T00:00:00').toLocaleDateString('es-ES',{weekday:'long',day:'2-digit',month:'long'})}`}</h3>
               <button onClick={onClose} className="px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-600">✕</button>
           </div>
           <div className="p-4">
@@ -705,6 +793,24 @@ const StarIcon = ({ className, ...props }) => {
                         )}
                     </div>
                 </div>
+                {form.exerciseTime !== '0min' && (
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Intensidad del Ejercicio</label>
+                        <div className="flex gap-2">
+                            {EXERCISE_INTENSITY.map(intensity => (
+                                <Button 
+                                    key={intensity.value} 
+                                    type="button"
+                                    variant={form.exerciseIntensity === intensity.value ? 'primary' : 'outline'}
+                                    onClick={() => change('exerciseIntensity', intensity.value)}
+                                    className="flex-1"
+                                >
+                                    {intensity.label}
+                                </Button>
+                            ))}
+                        </div>
+                    </div>
+                )}
                 <div className="grid grid-cols-2 gap-4">
                   <Select label="Consumo de agua" options={WATER} value={form.water} onChange={(e)=>change('water',e.target.value)}/>
                   <Select label="Horas de sueño" options={SLEEP} value={form.sleep} onChange={(e)=>change('sleep',e.target.value)}/>
@@ -712,6 +818,10 @@ const StarIcon = ({ className, ...props }) => {
                 <div className="grid grid-cols-2 gap-4">
                     <Select label="Calidad de la dieta" options={DIET} value={form.diet} onChange={(e)=>change('diet',e.target.value)}/>
                     <Select label="Tipo de ayuno" options={FASTING} value={form.fasting} onChange={(e)=>change('fasting',e.target.value)}/>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                    <Select label="Meditación" options={MEDITATION_TIME} value={form.meditationTime} onChange={(e)=>change('meditationTime',e.target.value)}/>
+                    <Input label="Pasos diarios" type="number" value={form.dailySteps} onChange={(e)=>change('dailySteps',e.target.value.replace(/[^0-9]/g,''))}/>
                 </div>
                 
                 <div className="pt-4 border-t-2 dark:border-gray-600">
@@ -739,321 +849,495 @@ const StarIcon = ({ className, ...props }) => {
       </Modal>);
     };
 
-    const CalendarView = ({user, setUser, date, calendarRef})=>{
-      const [dayModalDate, setDayModalDate] = React.useState(null);
-      const [eventModal, setEventModal] = React.useState({ open: false, date: null, type: null, existing: null });
+// ====================== INICIO DE LOS NUEVOS COMPONENTES DE MEDIDAS ======================
+const MeasurementChoiceModal = ({ open, onClose, onSelect }) => {
+    if (!open) return null;
+    return (
+        <Modal open={open} onClose={onClose} size="sm">
+            <div className="relative overflow-hidden flex items-center justify-between border-b-2 border-gray-300 dark:border-gray-600 p-4">
+    <div className="absolute inset-0 bg-gradient-to-l from-blue-300 dark:from-blue-900 from-30% to-transparent pointer-events-none"></div>
+                <h3 className="relative text-lg font-semibold text-gray-800 dark:text-white">Gestión de Medidas</h3>
+                <button onClick={onClose} className="px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-600">✕</button>
+            </div>
+            <div className="p-6 flex flex-col space-y-4">
+                <Button onClick={() => onSelect('add')} variant="primary" className="w-full">Introducir Medidas Nuevas</Button>
+                <Button onClick={() => onSelect('view')} variant="secondary" className="w-full">Ver Medidas Registradas</Button>
+            </div>
+        </Modal>
+    );
+};
 
-      // CORRECCIÓN 1: Lógica de auto-scroll, ahora dentro de CalendarView para asegurar que se ejecuta después de renderizar.
-      React.useEffect(() => {
-          if (!calendarRef.current || window.innerWidth >= 640 || !user) {
-              return;
-          }
-          
-          // Simplificamos la lógica: el objetivo es SIEMPRE el día de hoy.
-          const targetDate = new Date(); 
+const AddMeasurementModal = ({ open, onClose, onSave, existingMeasurement }) => {
+    const [form, setForm] = React.useState({
+        id: null,
+        date: fmt(new Date()),
+        type: 'circunferencia',
+        muslos: '',
+        cadera: '',
+        cintura: '',
+        pecho: '',
+        brazo: ''
+    });
 
-          // Solo intentamos hacer scroll si el mes que se está mostrando es el mes actual.
-          if (date.getFullYear() === targetDate.getFullYear() && date.getMonth() === targetDate.getMonth()) {
-              const dateToScrollString = fmt(targetDate);
-              const targetElement = calendarRef.current.querySelector(`button[data-date="${dateToScrollString}"]`);
-
-              if (targetElement) {
-                  // Usamos un pequeño retardo para dar tiempo al navegador a pintar todo.
-                  setTimeout(() => {
-                      targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                  }, 200); 
-              }
-          }
-      }, [date, user.entries]); // Se ejecuta solo cuando cambia el mes o cuando se actualizan los registros.
-
-      const handleOpenEventModal = (dayStr, eventType = null) => {
-          const dayEvents = getEventsForDay(new Date(dayStr + 'T00:00:00'));
-          const existing = eventType ? dayEvents.find(e => e.type === eventType) : dayEvents[0];
-          setDayModalDate(null);
-          setEventModal({ open: true, date: dayStr, type: eventType, existing: existing });
-      };
-      
-      const saveEntry=(d,p)=>{ const e=[...user.entries]; const i=e.findIndex(x=>x.date===d); const nE={...(e[i]||{}),date:d,...p}; if(i>=0)e[i]=nE; else e.push(nE); e.sort((a,b)=>new Date(a.date)-new Date(b.date)); setUser({...user,entries:e}); };
-      const removeEntry=(d)=>{ const updatedEntries = user.entries.filter(e => e.date !== d); setUser({...user, entries: updatedEntries}); };
-      
-      const saveEvent = (eventData) => {
-        const events = [...(user.events || [])];
-        const index = events.findIndex(e => e.id === eventData.id);
-        if (index > -1) {
-            events[index] = eventData;
-        } else {
-            events.push(eventData);
-        }
-        setUser({ ...user, events });
-      };
-
-      const deleteEvent = (eventId) => {
-        const events = (user.events || []).filter(e => e.id !== eventId);
-        setUser({ ...user, events });
-      };
-      
-      const isMedicationDay = (day, med) => {
-          if (!med || !med.name || !med.frequency || !med.startDate) return false;
-          const startDate = new Date(med.startDate + 'T00:00:00');
-          const currentDay = new Date(day);
-          currentDay.setHours(0,0,0,0);
-          if (currentDay < startDate) return false;
-          const diffTime = Math.abs(currentDay - startDate);
-          const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-          return diffDays % med.frequency === 0;
-      };
-
-      const getEventsForDay = (day) => {
-        const events = user.events || [];
-        const dayOfWeek = day.getDay();
-        const dateOfMonth = day.getDate();
-        const dayDate = new Date(day);
-        dayDate.setHours(0,0,0,0);
-
-        return events.filter(event => {
-            const eventDate = new Date(event.date + 'T00:00:00');
-            switch (event.frequency) {
-                case 'unico': return event.date === fmt(day);
-                case 'diario': return dayDate >= eventDate;
-                case 'semanal': return dayDate >= eventDate && dayOfWeek === eventDate.getDay();
-                case 'quincenal':
-                    if (dayDate < eventDate) return false;
-                    const diffTime = Math.abs(dayDate - eventDate);
-                    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-                    return diffDays % 14 === 0;
-                case 'mensual': return dayDate >= eventDate && dateOfMonth === eventDate.getDate();
-                default: return false;
+    React.useEffect(() => {
+        if (open) {
+            if (existingMeasurement) {
+                setForm({
+                    id: existingMeasurement.id,
+                    date: existingMeasurement.date,
+                    type: existingMeasurement.type || 'circunferencia',
+                    muslos: existingMeasurement.muslos ?? '',
+                    cadera: existingMeasurement.cadera ?? '',
+                    cintura: existingMeasurement.cintura ?? '',
+                    pecho: existingMeasurement.pecho ?? '',
+                    brazo: existingMeasurement.brazo ?? ''
+                });
+            } else {
+                setForm({
+                    id: Date.now(),
+                    date: fmt(new Date()),
+                    type: 'circunferencia',
+                    muslos: '', cadera: '', cintura: '', pecho: '', brazo: ''
+                });
             }
-        });
-      };
-
-      const firstOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);
-      const lastOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0);
-      const firstDayOfWeek = (firstOfMonth.getDay() + 6) % 7;
-      const calendarStart = new Date(firstOfMonth);
-      calendarStart.setDate(firstOfMonth.getDate() - firstDayOfWeek);
-      const lastDayOfWeek = (lastOfMonth.getDay() + 6) % 7;
-      const calendarEnd = new Date(lastOfMonth);
-      calendarEnd.setDate(lastOfMonth.getDate() + (6 - lastDayOfWeek));
-
-      const days = [];
-      for (let d = new Date(calendarStart); d <= calendarEnd; d.setDate(d.getDate() + 1)) {
-          days.push(new Date(d));
-      }
-      
-      const WeeklyLossAnnotation = ({ day, entries, profile, isMobile=false }) => {
-        if (day.getDay() !== 0) return null; // Only for Sundays
-        const allEntriesSorted = [...entries].sort((a, b) => new Date(a.date) - new Date(b.date));
-        if (allEntriesSorted.length < 1) return null;
-        
-        const firstEntryDate = new Date(allEntriesSorted[0].date + 'T00:00:00');
-        const thisSunday = new Date(day);
-        thisSunday.setHours(23, 59, 59, 999);
-        
-        if (thisSunday < firstEntryDate) return null;
-        
-        const lastEntryThisWeek = allEntriesSorted.filter(e => e.weight != null && new Date(e.date + 'T00:00:00') <= thisSunday).pop();
-        if (!lastEntryThisWeek) return null;
-        
-        const previousSunday = new Date(thisSunday);
-        previousSunday.setDate(thisSunday.getDate() - 7);
-        
-        let weightToCompare;
-        if (previousSunday < firstEntryDate) {
-            weightToCompare = profile.startWeight;
-        } else {
-            const lastEntryPrevWeek = allEntriesSorted.filter(e => e.weight != null && new Date(e.date + 'T00:00:00') <= previousSunday).pop();
-            weightToCompare = lastEntryPrevWeek ? lastEntryPrevWeek.weight : profile.startWeight;
         }
+    }, [open, existingMeasurement]);
+    
+    const change = (k, v) => setForm(s => ({ ...s, [k]: v }));
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        const numericData = {
+            muslos: form.muslos !== '' ? parseFloat(form.muslos) : null,
+            cadera: form.cadera !== '' ? parseFloat(form.cadera) : null,
+            cintura: form.cintura !== '' ? parseFloat(form.cintura) : null,
+            pecho: form.pecho !== '' ? parseFloat(form.pecho) : null,
+            brazo: form.brazo !== '' ? parseFloat(form.brazo) : null,
+        };
+        onSave({ ...form, ...numericData });
+        onClose();
+    };
 
-        const currentWeight = lastEntryThisWeek.weight;
-        const totalChange = currentWeight - weightToCompare;
-
-        if (Math.abs(totalChange) < 0.05) return null;
-        
-        const symbol = totalChange < 0 ? "-" : "+";
-        const value = Math.abs(totalChange).toFixed(1).replace('.', ',');
-
-        if (isMobile) {
-            return (
-                <div className="absolute top-2 right-2 flex items-center justify-center w-12 h-12 rounded-full border-2 border-red-500 bg-white/50 dark:bg-black/50">
-                    <span className="font-handwriting text-black dark:text-white text-2xl font-bold">{symbol}{value}</span>
+    return (
+        <Modal open={open} onClose={onClose} size="lg">
+             <div className="relative overflow-hidden flex items-center justify-between border-b-2 border-gray-300 dark:border-gray-600 p-4">
+    <div className="absolute inset-0 bg-gradient-to-l from-blue-300 dark:from-blue-900 from-30% to-transparent pointer-events-none"></div>
+                <h3 className="relative text-lg font-semibold text-gray-800 dark:text-white">{existingMeasurement ? 'Editar Medidas' : 'Introducir Nuevas Medidas'}</h3>
+                <button onClick={onClose} className="px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-600">✕</button>
+            </div>
+            <form onSubmit={handleSubmit} className="p-4 space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Input label="Fecha de la Medición" type="date" value={form.date} onChange={(e) => change('date', e.target.value)} />
+                    <Select label="Tipo de Medición" options={[{value: 'circunferencia', label: 'Circunferencia Corporal (cm)'}, {value: 'pliegues', label: 'Pliegues Cutáneos (mm)'}]} value={form.type} onChange={(e) => change('type', e.target.value)} />
                 </div>
-            );
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 border-t-2 dark:border-gray-600 pt-4">
+                    <Input label="Muslos" type="number" step="0.1" value={form.muslos} onChange={(e) => change('muslos', e.target.value)} />
+                    <Input label="Cadera" type="number" step="0.1" value={form.cadera} onChange={(e) => change('cadera', e.target.value)} />
+                    <Input label="Cintura" type="number" step="0.1" value={form.cintura} onChange={(e) => change('cintura', e.target.value)} />
+                    <Input label="Pecho" type="number" step="0.1" value={form.pecho} onChange={(e) => change('pecho', e.target.value)} />
+                    <Input label="Brazo" type="number" step="0.1" value={form.brazo} onChange={(e) => change('brazo', e.target.value)} />
+                </div>
+                <div className="flex justify-end gap-2 pt-4">
+                    <Button type="button" variant="secondary" onClick={onClose}>Cancelar</Button>
+                    <Button type="submit">Guardar Medidas</Button>
+                </div>
+            </form>
+        </Modal>
+    );
+};
+
+const ViewMeasurementsModal = ({ open, onClose, measurements, onEdit, onDelete }) => {
+    const sortedMeasurements = React.useMemo(() => {
+        return [...measurements].sort((a,b) => new Date(b.date) - new Date(a.date));
+    }, [measurements]);
+
+    return (
+        <Modal open={open} onClose={onClose} size="lg">
+             <div className="relative overflow-hidden flex items-center justify-between border-b-2 border-gray-300 dark:border-gray-600 p-4">
+    <div className="absolute inset-0 bg-gradient-to-l from-blue-300 dark:from-blue-900 from-30% to-transparent pointer-events-none"></div>
+                <h3 className="relative text-lg font-semibold text-gray-800 dark:text-white">Historial de Medidas</h3>
+                <button onClick={onClose} className="px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-600">✕</button>
+            </div>
+            <div className="p-4 max-h-[70vh] overflow-y-auto">
+                {sortedMeasurements.length === 0 ? (
+                    <p className="text-center text-gray-600 dark:text-gray-300 py-8">No hay medidas registradas todavía.</p>
+                ) : (
+                    <div className="space-y-3">
+                        {sortedMeasurements.map(m => (
+                            <Card key={m.id} className="p-3">
+                                <div className="flex justify-between items-start">
+                                    <div>
+                                        <p className="font-bold text-gray-800 dark:text-white">{new Date(m.date + 'T00:00:00').toLocaleDateString('es-ES', {year: 'numeric', month: 'long', day: 'numeric'})}</p>
+                                        <p className="text-sm text-gray-600 dark:text-gray-300">{m.type === 'circunferencia' ? 'Circunferencia (cm)' : 'Pliegues (mm)'}</p>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <Button variant="outline" onClick={() => onEdit(m)} className="px-2 py-1 text-xs">Editar</Button>
+                                        <Button variant="danger" onClick={() => onDelete(m.id)} className="px-2 py-1 text-xs">Borrar</Button>
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 mt-2 text-center border-t dark:border-gray-600 pt-2">
+                                    <div><p className="text-xs">Muslos</p><p className="font-semibold">{m.muslos ?? '—'}</p></div>
+                                    <div><p className="text-xs">Cadera</p><p className="font-semibold">{m.cadera ?? '—'}</p></div>
+                                    <div><p className="text-xs">Cintura</p><p className="font-semibold">{m.cintura ?? '—'}</p></div>
+                                    <div><p className="text-xs">Pecho</p><p className="font-semibold">{m.pecho ?? '—'}</p></div>
+                                    <div><p className="text-xs">Brazo</p><p className="font-semibold">{m.brazo ?? '—'}</p></div>
+                                </div>
+                            </Card>
+                        ))}
+                    </div>
+                )}
+            </div>
+             <div className="flex justify-end p-4 border-t-2 dark:border-gray-600">
+                <Button onClick={onClose} variant="secondary">Cerrar</Button>
+            </div>
+        </Modal>
+    );
+};
+// ====================== FIN DE LOS NUEVOS COMPONENTES DE MEDIDAS ======================
+
+// ====================== INICIO DEL CÓDIGO FINAL Y COMPLETO PARA CALENDARVIEW ======================
+const CalendarView = ({user, setUser, date, calendarRef})=>{
+  const [dayModalDate, setDayModalDate] = React.useState(null);
+  const [eventModal, setEventModal] = React.useState({ open: false, date: null, type: null, existing: null });
+
+  React.useEffect(() => {
+      if (!calendarRef.current || window.innerWidth >= 640 || !user) {
+          return;
+      }
+      const targetDate = new Date(); 
+      if (date.getFullYear() === targetDate.getFullYear() && date.getMonth() === targetDate.getMonth()) {
+          const dateToScrollString = fmt(targetDate);
+          const targetElement = calendarRef.current.querySelector(`button[data-date="${dateToScrollString}"]`);
+          if (targetElement) {
+              setTimeout(() => {
+                  targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              }, 200); 
+          }
+      }
+  }, [date, user.entries]);
+
+  const handleOpenEventModal = (dayStr, eventType = null) => {
+      const dayEvents = getEventsForDay(new Date(dayStr + 'T00:00:00'));
+      const existing = eventType ? dayEvents.find(e => e.type === eventType) : dayEvents[0];
+      setDayModalDate(null);
+      setEventModal({ open: true, date: dayStr, type: eventType, existing: existing });
+  };
+  
+  const saveEntry=(d,p)=>{ const e=[...user.entries]; const i=e.findIndex(x=>x.date===d); const nE={...(e[i]||{}),date:d,...p}; if(i>=0)e[i]=nE; else e.push(nE); e.sort((a,b)=>new Date(a.date)-new Date(b.date)); setUser({...user,entries:e}); };
+  const removeEntry=(d)=>{ const updatedEntries = user.entries.filter(e => e.date !== d); setUser({...user, entries: updatedEntries}); };
+  
+  const saveEvent = (eventData) => {
+    const events = [...(user.events || [])];
+    const index = events.findIndex(e => e.id === eventData.id);
+    if (index > -1) {
+        events[index] = eventData;
+    } else {
+        events.push(eventData);
+    }
+    setUser({ ...user, events });
+  };
+
+  const deleteEvent = (eventId) => {
+    const events = (user.events || []).filter(e => e.id !== eventId);
+    setUser({ ...user, events });
+  };
+  
+  const isMedicationDay = (day, med) => {
+      if (!med || !med.name || !med.frequency || !med.startDate) return false;
+      const startDate = new Date(med.startDate + 'T00:00:00');
+      const currentDay = new Date(day);
+      currentDay.setHours(0,0,0,0);
+      if (currentDay < startDate) return false;
+      const diffTime = Math.abs(currentDay - startDate);
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+      return diffDays % med.frequency === 0;
+  };
+
+  const getEventsForDay = (day) => {
+    const events = user.events || [];
+    const dayOfWeek = day.getDay();
+    const dateOfMonth = day.getDate();
+    const dayDate = new Date(day);
+    dayDate.setHours(0,0,0,0);
+
+    return events.filter(event => {
+        const eventDate = new Date(event.date + 'T00:00:00');
+        switch (event.frequency) {
+            case 'unico': return event.date === fmt(day);
+            case 'diario': return dayDate >= eventDate;
+            case 'semanal': return dayDate >= eventDate && dayOfWeek === eventDate.getDay();
+            case 'quincenal':
+                if (dayDate < eventDate) return false;
+                const diffTime = Math.abs(dayDate - eventDate);
+                const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+                return diffDays % 14 === 0;
+            case 'mensual': return dayDate >= eventDate && dateOfMonth === eventDate.getDate();
+            default: return false;
         }
-        
+    });
+  };
+
+  const firstOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);
+  const lastOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+  const firstDayOfWeek = (firstOfMonth.getDay() + 6) % 7;
+  const calendarStart = new Date(firstOfMonth);
+  calendarStart.setDate(firstOfMonth.getDate() - firstDayOfWeek);
+  const lastDayOfWeek = (lastOfMonth.getDay() + 6) % 7;
+  const calendarEnd = new Date(lastOfMonth);
+  calendarEnd.setDate(lastOfMonth.getDate() + (6 - lastDayOfWeek));
+
+  const days = [];
+  for (let d = new Date(calendarStart); d <= calendarEnd; d.setDate(d.getDate() + 1)) {
+      days.push(new Date(d));
+  }
+  
+  const WeeklyLossAnnotation = ({ day, entries, profile, isMobile=false }) => {
+    if (day.getDay() !== 0) return null;
+    const allEntriesSorted = [...entries].sort((a, b) => new Date(a.date) - new Date(b.date));
+    if (allEntriesSorted.length < 1) return null;
+    
+    const firstEntryDate = new Date(allEntriesSorted[0].date + 'T00:00:00');
+    const thisSunday = new Date(day);
+    thisSunday.setHours(23, 59, 59, 999);
+    
+    if (thisSunday < firstEntryDate) return null;
+    
+    const lastEntryThisWeek = allEntriesSorted.filter(e => e.weight != null && new Date(e.date + 'T00:00:00') <= thisSunday).pop();
+    if (!lastEntryThisWeek) return null;
+    
+    const previousSunday = new Date(thisSunday);
+    previousSunday.setDate(thisSunday.getDate() - 7);
+    
+    let weightToCompare;
+    if (previousSunday < firstEntryDate) {
+        weightToCompare = profile.startWeight;
+    } else {
+        const lastEntryPrevWeek = allEntriesSorted.filter(e => e.weight != null && new Date(e.date + 'T00:00:00') <= previousSunday).pop();
+        weightToCompare = lastEntryPrevWeek ? lastEntryPrevWeek.weight : profile.startWeight;
+    }
+
+    const currentWeight = lastEntryThisWeek.weight;
+    const totalChange = currentWeight - weightToCompare;
+
+    if (Math.abs(totalChange) < 0.05) return null;
+    
+    const symbol = totalChange < 0 ? "-" : "+";
+    const value = Math.abs(totalChange).toFixed(1).replace('.', ',');
+
+    if (isMobile) {
         return (
-            <div className="absolute top-1 right-1 w-12 h-12 flex items-center justify-center pointer-events-none">
-                <svg viewBox="0 0 100 100" className="absolute w-full h-full">
-                    <path d="M 50,5 A 45,45 0 1,1 49.9,5.01 Z" stroke="#dc2626" strokeWidth="4" fill="none" transform="rotate(-15 50 50)" />
-                </svg>
-                <span className="font-handwriting text-black dark:text-white text-xl font-bold z-10">{symbol}{value}</span>
+            <div className="absolute top-2 right-2 flex items-center justify-center w-12 h-12 rounded-full border-2 border-red-500 bg-white/50 dark:bg-black/50">
+                <span className="font-handwriting text-black dark:text-white text-2xl font-bold">{symbol}{value}</span>
             </div>
         );
-      };
-
-      return(<div className="space-y-4" ref={calendarRef}>
-        <div className="hidden sm:block"> {/* Desktop Calendar */}
-            <Card>
-                <div className="grid grid-cols-7 gap-1 md:gap-2">
-                    {days.map((d,i)=>{ 
-                        const isCurrentMonth = d.getMonth() === date.getMonth();
-                        const dayString = fmt(d);
-                        const entry = user.entries.find(e=>e.date===dayString); 
-                        const prevEntry = user.entries.filter(e=>e.weight!=null&&e.date<dayString).pop(); 
-                        const diff = entry?.weight!=null&&prevEntry?.weight!=null?entry.weight-prevEntry.weight:null; 
-                        const eventsOnDay = getEventsForDay(d);
-                        const specialEvent = eventsOnDay.find(e => e.type === 'especial');
-                        const otherEvents = eventsOnDay.filter(e => e.type !== 'especial');
-                        const weekdayAbbr = d.toLocaleString('es-ES', { weekday: 'short' }).replace('.', '');
-
-                        const iconPriority = { 'injection': 6, 'exercise': 5, 'pill': 4, 'medico': 3, 'analisis': 2, 'bebida': 1 };
-                        let allIcons = [];
-
-                        if (isMedicationDay(d, user.profile.medication)) { allIcons.push({ key: 'med1', type: 'injection' }); }
-                        if (isMedicationDay(d, user.profile.medication2)) { allIcons.push({ key: 'med2', type: 'pill' }); }
-                        if (entry?.exerciseTime && entry.exerciseTime !== '0min') { allIcons.push({ key: 'exercise', type: 'exercise', data: entry }); }
-                        otherEvents.forEach(e => { if(!allIcons.some(ic => ic.type === e.type)) allIcons.push({ key: e.id, type: e.type }); });
-
-                        const sortedIcons = allIcons.sort((a,b) => (iconPriority[b.type] || 0) - (iconPriority[a.type] || 0));
-
-                        return(
-                            <button key={i} data-date={dayString} onClick={()=>setDayModalDate(dayString)} className={`relative rounded-lg calendar-cell p-2 text-left hover:shadow-lg transition-all duration-200 flex flex-col items-start justify-start min-h-[9rem] ${dayString===fmt(new Date())?'ring-2 ring-blue-500 border-blue-500':''} ${!isCurrentMonth ? 'opacity-60 hover:opacity-100' : ''}`}>
-                                 <div className="flex items-center justify-between w-full gap-1">
-                                    <span className="text-sm font-medium text-gray-700 dark:text-gray-200">{weekdayAbbr} {d.getDate()}</span>
-                                    <div className={`flex items-center gap-1 ${d.getDay() === 0 && specialEvent ? 'mr-12' : ''}`}>
-                                        {specialEvent && <StarIcon className="w-6 h-6"/>}
-                                    </div>
-                                </div>
-                                
-                                <div className="w-full flex-grow flex flex-col justify-center mt-1">
-                                    {entry?.weight!=null && (
-                                        <>
-                                            <div className="text-2xl font-bold text-gray-800 dark:text-white leading-5">{entry.weight.toFixed(1)} kg</div>
-                                            {diff!=null && <div className={`text-sm font-semibold ${diff<0?'text-green-600':(diff>0?'text-red-600':'text-gray-500')}`}>{diff<0?'▼':(diff>0?'▲':'▬')} {Math.abs(diff).toFixed(1)} kg</div>}
-                                        </>
-                                    )}
-                                </div>
-                                
-                                <div className="w-full mt-auto flex flex-row-reverse flex-wrap-reverse items-end justify-start gap-x-1 gap-y-0.5">
-                                    {sortedIcons.slice(0, 6).map((icon) => {
-                                        let iconEl;
-                                        const themedClass = "w-6 h-6 text-gray-800 dark:text-white";
-                                        const themedClassAnaerobic = "w-8 h-8 text-gray-800 dark:text-white";
-                                        
-                                        switch (icon.type) {
-                                            case 'injection': iconEl = <InjectionIcon className="w-6 h-6"/>; break;
-                                            case 'pill': iconEl = <PillIcon className="w-6 h-6"/>; break;
-                                            case 'exercise': iconEl = (
-                                                <div className="flex items-center gap-1">
-                                                    <span className="text-xs font-semibold text-gray-800 dark:text-white">{EXERCISE_TIME.find(opt => opt.value === icon.data.exerciseTime)?.label || ''}</span>
-                                                    {icon.data.exerciseType === 'anaerobico' ? <AnaerobicIcon className={themedClassAnaerobic}/> : <WeightlifterIcon className={themedClass}/>}
-                                                </div>
-                                            ); break;
-                                            case 'medico': iconEl = <MedicalVisitIcon className={themedClass}/>; break;
-                                            case 'analisis': iconEl = <AnalysisIcon className={themedClass}/>; break;
-                                            case 'bebida': iconEl = <DrinkIcon className={themedClass}/>; break;
-                                            default: iconEl = null;
-                                        }
-                                        return <div key={icon.key}>{iconEl}</div>;
-                                    })}
-                                </div>
-                                <WeeklyLossAnnotation day={d} entries={user.entries} profile={user.profile} isMobile={false} />
-                            </button>
-                        );
-                    })}
-                </div>
-            </Card>
+    }
+    
+    return (
+        <div className="absolute top-1 right-1 w-12 h-12 flex items-center justify-center pointer-events-none">
+            <svg viewBox="0 0 100 100" className="absolute w-full h-full">
+                <path d="M 50,5 A 45,45 0 1,1 49.9,5.01 Z" stroke="#dc2626" strokeWidth="4" fill="none" transform="rotate(-15 50 50)" />
+            </svg>
+            <span className="font-handwriting text-black dark:text-white text-xl font-bold z-10">{symbol}{value}</span>
         </div>
-        
-        <div className="sm:hidden space-y-2"> {/* Mobile Calendar */}
-             {days.map((d, i) => {
-                const isCurrentMonth = d.getMonth() === date.getMonth();
-                if (!isCurrentMonth) return null;
+    );
+  };
 
-                const dayString = fmt(d);
-                const entry = user.entries.find(e => e.date === dayString);
-                const prevEntry = user.entries.filter(e => e.weight != null && e.date < dayString).pop();
-                const diff = entry?.weight != null && prevEntry?.weight != null ? entry.weight - prevEntry.weight : null;
-                const eventsOnDay = getEventsForDay(d);
-                const specialEvent = eventsOnDay.find(e => e.type === 'especial');
-                const otherEvents = eventsOnDay.filter(e => e.type !== 'especial');
-                const weekdayAbbr = d.toLocaleDateString('es-ES', { weekday: 'short' }).replace('.', '');
-                
-                const hasIcons = isMedicationDay(d, user.profile.medication) || isMedicationDay(d, user.profile.medication2) || (entry?.exerciseTime && entry.exerciseTime !== '0min') || otherEvents.length > 0;
-                const isSundayWithIcons = d.getDay() === 0 && hasIcons;
+  const IconWithTooltip = ({ tooltipText, children }) => {
+    if (!tooltipText) {
+        return children;
+    }
+    return (
+        <div className="tooltip-wrap relative">
+            {children}
+            <div className="tooltip">
+                <p>{tooltipText}</p>
+            </div>
+        </div>
+    );
+  };
 
-                const iconPriority = { 'injection': 6, 'exercise': 5, 'pill': 4, 'medico': 3, 'analisis': 2, 'bebida': 1 };
-                let allIcons = [];
-                if (isMedicationDay(d, user.profile.medication)) { allIcons.push({ key: 'med1', type: 'injection' }); }
-                if (isMedicationDay(d, user.profile.medication2)) { allIcons.push({ key: 'med2', type: 'pill' }); }
-                if (entry?.exerciseTime && entry.exerciseTime !== '0min') { allIcons.push({ key: 'exercise', type: 'exercise', data: entry }); }
-                otherEvents.forEach(e => { if(!allIcons.some(ic => ic.type === e.type)) allIcons.push({ key: e.id, type: e.type }); });
-                const sortedIcons = allIcons.sort((a,b) => (iconPriority[b.type] || 0) - (iconPriority[a.type] || 0));
+  return(<div className="space-y-4" ref={calendarRef}>
+    <div className="hidden sm:block"> {/* Desktop Calendar */}
+        <Card>
+            <div className="grid grid-cols-7 gap-1 md:gap-2">
+                {days.map((d,i)=>{ 
+                    const isCurrentMonth = d.getMonth() === date.getMonth();
+                    const dayString = fmt(d);
+                    const entry = user.entries.find(e=>e.date===dayString); 
+                    const prevEntry = user.entries.filter(e=>e.weight!=null&&e.date<dayString).pop(); 
+                    const diff = entry?.weight!=null&&prevEntry?.weight!=null?entry.weight-prevEntry.weight:null; 
+                    const eventsOnDay = getEventsForDay(d);
+                    const specialEvent = eventsOnDay.find(e => e.type === 'especial');
+                    const otherEvents = eventsOnDay.filter(e => e.type !== 'especial');
+                    const weekdayAbbr = d.toLocaleString('es-ES', { weekday: 'short' }).replace('.', '');
 
-                return (
-                    <button key={i} data-date={dayString} onClick={() => setDayModalDate(dayString)} className={`relative w-full rounded-lg calendar-cell p-3 text-left hover:shadow-lg transition-all duration-200 flex items-center justify-between ${dayString === fmt(new Date()) ? 'ring-2 ring-blue-500 border-blue-500' : ''} ${isSundayWithIcons ? 'min-h-[6.5rem]' : 'min-h-[4.5rem]'}`}>
-                        <div className="flex items-center gap-4">
-                            <div className="flex flex-col items-center justify-center w-12 text-center">
-                                <span className="text-xs font-bold uppercase text-gray-600 dark:text-gray-300">{weekdayAbbr}</span>
-                                <span className="text-2xl font-bold leading-tight text-gray-700 dark:text-white">{d.getDate()}</span>
+                    const iconPriority = { 'injection': 7, 'exercise': 6, 'meditation': 5, 'pill': 4, 'medico': 3, 'analisis': 2, 'bebida': 1 };
+                    let allIcons = [];
+
+                    if (isMedicationDay(d, user.profile.medication)) { allIcons.push({ key: 'med1', type: 'injection' }); }
+                    if (isMedicationDay(d, user.profile.medication2)) { allIcons.push({ key: 'med2', type: 'pill' }); }
+                    if (entry?.exerciseTime && entry.exerciseTime !== '0min') { allIcons.push({ key: 'exercise', type: 'exercise', data: entry }); }
+                    if (entry?.meditationTime && entry.meditationTime !== '0min') { allIcons.push({ key: 'meditation', type: 'meditation', data: entry }); }
+                    otherEvents.forEach(e => { if(!allIcons.some(ic => ic.type === e.type)) allIcons.push({ key: e.id, type: e.type, event: e }); });
+
+                    const sortedIcons = allIcons.sort((a,b) => (iconPriority[b.type] || 0) - (iconPriority[a.type] || 0));
+
+                    return(
+                        <button key={i} data-date={dayString} onClick={()=>setDayModalDate(dayString)} className={`relative rounded-lg calendar-cell p-2 text-left hover:shadow-lg transition-all duration-200 flex flex-col items-start justify-start min-h-[9rem] ${dayString===fmt(new Date())?'ring-2 ring-blue-500 border-blue-500':''} ${!isCurrentMonth ? 'opacity-60 hover:opacity-100' : ''}`}>
+                             <div className="flex items-center justify-between w-full gap-1">
+                                <span className="text-sm font-medium text-gray-700 dark:text-gray-200">{weekdayAbbr} {d.getDate()}</span>
+                                <div className={`flex items-center gap-1 ${d.getDay() === 0 && specialEvent ? 'mr-12' : ''}`}>
+                                    {specialEvent && <IconWithTooltip tooltipText={specialEvent.message}><StarIcon className="w-6 h-6" /></IconWithTooltip>}
+                                </div>
                             </div>
+                            
+                            <div className="w-full flex-grow flex flex-col justify-center mt-1">
+                                {entry?.weight!=null && (
+                                    <>
+                                        <div className="text-2xl font-bold text-gray-800 dark:text-white leading-5">{entry.weight.toFixed(1)} kg</div>
+                                        {diff!=null && <div className={`text-sm font-semibold ${diff<0?'text-green-600':(diff>0?'text-red-600':'text-gray-500')}`}>{diff<0?'▼':(diff>0?'▲':'▬')} {Math.abs(diff).toFixed(1)} kg</div>}
+                                    </>
+                                )}
+                            </div>
+                            
+                            <div className="w-full mt-auto flex flex-row-reverse flex-wrap-reverse items-end justify-start gap-x-1 gap-y-0.5">
+                                {sortedIcons.slice(0, 6).map((icon) => {
+                                    let iconEl;
+                                    const themedClass = "w-6 h-6 text-gray-800 dark:text-white";
+                                    const themedClassAnaerobic = "w-8 h-8 text-gray-800 dark:text-white";
+                                    
+                                    switch (icon.type) {
+                                        case 'injection': iconEl = <InjectionIcon className="w-6 h-6"/>; break;
+                                        case 'pill': iconEl = <PillIcon className="w-6 h-6"/>; break;
+                                        case 'meditation': 
+                                            const meditationLabel = MEDITATION_TIME.find(opt => opt.value === icon.data.meditationTime)?.label || '';
+                                            iconEl = <IconWithTooltip tooltipText={meditationLabel}><MeditationIcon className={themedClass} /></IconWithTooltip>;
+                                            break;
+                                        case 'exercise':
+                                            const intensityLabel = EXERCISE_INTENSITY.find(opt => opt.value === icon.data.exerciseIntensity)?.label;
+                                            let ExerciseComponent;
+                                            switch (icon.data.exerciseType) {
+                                                case 'anaerobico': ExerciseComponent = <AnaerobicIcon className={themedClassAnaerobic}/>; break;
+                                                case 'aerobico': ExerciseComponent = <AerobicIcon className={themedClassAnaerobic}/>; break;
+                                                case 'paseo': ExerciseComponent = <WalkIcon className={themedClass}/>; break;
+                                                default: ExerciseComponent = <WeightlifterIcon className={themedClass}/>; break;
+                                            }
+                                            iconEl = ( <IconWithTooltip tooltipText={intensityLabel}><div className="flex items-center gap-1"> <span className="text-xs font-semibold text-gray-800 dark:text-white">{EXERCISE_TIME.find(opt => opt.value === icon.data.exerciseTime)?.label || ''}</span> {ExerciseComponent} </div></IconWithTooltip> ); 
+                                            break;
+                                        case 'medico': iconEl = <IconWithTooltip tooltipText={icon.event?.message}><MedicalVisitIcon className={themedClass}/></IconWithTooltip>; break;
+                                        case 'analisis': iconEl = <IconWithTooltip tooltipText={icon.event?.message}><AnalysisIcon className={themedClass}/></IconWithTooltip>; break;
+                                        case 'bebida': iconEl = <IconWithTooltip tooltipText={icon.event?.message}><DrinkIcon className={themedClass}/></IconWithTooltip>; break;
+                                        default: iconEl = null;
+                                    }
+                                    return <div key={icon.key}>{iconEl}</div>;
+                                })}
+                            </div>
+                            <WeeklyLossAnnotation day={d} entries={user.entries} profile={user.profile} isMobile={false} />
+                        </button>
+                    );
+                })}
+            </div>
+        </Card>
+    </div>
+    
+    <div className="sm:hidden space-y-2"> {/* Mobile Calendar */}
+         {days.map((d, i) => {
+            const isCurrentMonth = d.getMonth() === date.getMonth();
+            if (!isCurrentMonth) return null;
 
-                            <div>
-                                {entry?.weight != null && (
-                                    <div className="flex items-center gap-2">
-                                        <div>
-                                            <div className="flex items-baseline gap-2">
-                                                <span className="text-2xl font-bold text-gray-800 dark:text-white">{entry.weight.toFixed(1)} kg</span>
-                                                {specialEvent && <StarIcon className="w-6 h-6"/>}
+            const dayString = fmt(d);
+            const entry = user.entries.find(e => e.date === dayString);
+            const prevEntry = user.entries.filter(e => e.weight != null && e.date < dayString).pop();
+            const diff = entry?.weight != null && prevEntry?.weight != null ? entry.weight - prevEntry.weight : null;
+            const eventsOnDay = getEventsForDay(d);
+            const specialEvent = eventsOnDay.find(e => e.type === 'especial');
+            const otherEvents = eventsOnDay.filter(e => e.type !== 'especial');
+            const weekdayAbbr = d.toLocaleDateString('es-ES', { weekday: 'short' }).replace('.', '');
+            
+            const hasIcons = isMedicationDay(d, user.profile.medication) || isMedicationDay(d, user.profile.medication2) || (entry?.exerciseTime && entry.exerciseTime !== '0min') || (entry?.meditationTime && entry.meditationTime !== '0min') || otherEvents.length > 0;
+            const isSundayWithIcons = d.getDay() === 0 && hasIcons;
+
+            const iconPriority = { 'injection': 7, 'exercise': 6, 'meditation': 5, 'pill': 4, 'medico': 3, 'analisis': 2, 'bebida': 1 };
+            let allIcons = [];
+            if (isMedicationDay(d, user.profile.medication)) { allIcons.push({ key: 'med1', type: 'injection' }); }
+            if (isMedicationDay(d, user.profile.medication2)) { allIcons.push({ key: 'med2', type: 'pill' }); }
+            if (entry?.exerciseTime && entry.exerciseTime !== '0min') { allIcons.push({ key: 'exercise', type: 'exercise', data: entry }); }
+            if (entry?.meditationTime && entry.meditationTime !== '0min') { allIcons.push({ key: 'meditation', type: 'meditation', data: entry }); }
+            otherEvents.forEach(e => { if(!allIcons.some(ic => ic.type === e.type)) allIcons.push({ key: e.id, type: e.type, event: e }); });
+            const sortedIcons = allIcons.sort((a,b) => (iconPriority[b.type] || 0) - (iconPriority[a.type] || 0));
+
+            return (
+                <button key={i} data-date={dayString} onClick={() => setDayModalDate(dayString)} className={`relative w-full rounded-lg calendar-cell p-3 text-left hover:shadow-lg transition-all duration-200 flex items-center justify-between ${dayString === fmt(new Date()) ? 'ring-2 ring-blue-500 border-blue-500' : ''} ${isSundayWithIcons ? 'min-h-[6.5rem]' : 'min-h-[4.5rem]'}`}>
+                    <div className="flex items-center gap-4">
+                        <div className="flex flex-col items-center justify-center w-12 text-center">
+                            <span className="text-xs font-bold uppercase text-gray-600 dark:text-gray-300">{weekdayAbbr}</span>
+                            <span className="text-2xl font-bold leading-tight text-gray-800 dark:text-white">{d.getDate()}</span>
+                        </div>
+
+                        <div>
+                            {entry?.weight != null && (
+                                <div className="flex items-center gap-2">
+                                    <div>
+                                        <div className="flex items-baseline gap-2">
+                                            <span className="text-2xl font-bold text-gray-800 dark:text-white">{entry.weight.toFixed(1)} kg</span>
+                                            {specialEvent && <IconWithTooltip tooltipText={specialEvent.message}><StarIcon className="w-6 h-6" /></IconWithTooltip>}
+                                        </div>
+                                        {diff != null && (
+                                            <div className={`text-base font-semibold ${diff < 0 ? 'text-green-600' : (diff > 0 ? 'text-red-600' : 'text-gray-500')}`}>
+                                                {diff < 0 ? '▼' : (diff > 0 ? '▲' : '▬')} {Math.abs(diff).toFixed(1)} kg
                                             </div>
-                                            {diff != null && (
-                                                <div className={`text-base font-semibold ${diff < 0 ? 'text-green-600' : (diff > 0 ? 'text-red-600' : 'text-gray-500')}`}>
-                                                    {diff < 0 ? '▼' : (diff > 0 ? '▲' : '▬')} {Math.abs(diff).toFixed(1)} kg
-                                                </div>
-                                            )}
-                                        </div>
+                                        )}
                                     </div>
-                                )}
-                                {(!entry || entry.weight == null) && specialEvent && (
-                                    <StarIcon className="w-7 h-7"/>
-                                )}
-                            </div>
+                                </div>
+                            )}
+                            {(!entry || entry.weight == null) && specialEvent && (
+                                <IconWithTooltip tooltipText={specialEvent.message}><StarIcon className="w-7 h-7" /></IconWithTooltip>
+                            )}
                         </div>
-                        
-                        <div className="absolute bottom-2 right-2 flex flex-row-reverse flex-wrap-reverse items-end justify-start gap-2" style={{maxWidth: isSundayWithIcons ? 'calc(100% - 9rem)' : 'calc(100% - 5rem)' }}>
-                            {sortedIcons.map((icon) => {
-                                let iconEl;
-                                const themedClass = "w-7 h-7 text-gray-800 dark:text-white";
-                                const themedClassAnaerobic = "w-8 h-8 text-gray-800 dark:text-white";
-                                
-                                switch (icon.type) {
-                                    case 'injection': iconEl = <InjectionIcon className="w-7 h-7"/>; break;
-                                    case 'pill': iconEl = <PillIcon className="w-7 h-7"/>; break;
-                                    case 'exercise': iconEl = (
-                                        <div className="flex items-center gap-1">
-                                            <span className="text-xs font-semibold text-gray-800 dark:text-white">{EXERCISE_TIME.find(opt => opt.value === icon.data.exerciseTime)?.label || ''}</span>
-                                            {icon.data.exerciseType === 'anaerobico' ? <AnaerobicIcon className={themedClassAnaerobic}/> : <WeightlifterIcon className={themedClass}/>}
-                                        </div>
-                                    ); break;
-                                    case 'medico': iconEl = <MedicalVisitIcon className={themedClass}/>; break;
-                                    case 'analisis': iconEl = <AnalysisIcon className={themedClass}/>; break;
-                                    case 'bebida': iconEl = <DrinkIcon className={themedClass}/>; break;
-                                    default: iconEl = null;
-                                }
-                                return <div key={icon.key}>{iconEl}</div>;
-                            })}
-                        </div>
-                        <WeeklyLossAnnotation day={d} entries={user.entries} profile={user.profile} isMobile={true} />
-                    </button>
-                );
-            })}
-        </div>
+                    </div>
+                    
+                    <div className="absolute bottom-2 right-2 flex flex-row-reverse flex-wrap-reverse items-end justify-start gap-2" style={{maxWidth: isSundayWithIcons ? 'calc(100% - 9rem)' : 'calc(100% - 5rem)' }}>
+                        {sortedIcons.map((icon) => {
+                            let iconEl;
+                            const themedClass = "w-7 h-7 text-gray-800 dark:text-white";
+                            const themedClassAnaerobic = "w-8 h-8 text-gray-800 dark:text-white";
+                            
+                            switch (icon.type) {
+                                case 'injection': iconEl = <InjectionIcon className="w-7 h-7"/>; break;
+                                case 'pill': iconEl = <PillIcon className="w-7 h-7"/>; break;
+                                case 'meditation':
+                                    const meditationLabel = MEDITATION_TIME.find(opt => opt.value === icon.data.meditationTime)?.label || '';
+                                    iconEl = <IconWithTooltip tooltipText={meditationLabel}><MeditationIcon className={themedClass} /></IconWithTooltip>;
+                                    break;
+                                case 'exercise':
+                                    const intensityLabel = EXERCISE_INTENSITY.find(opt => opt.value === icon.data.exerciseIntensity)?.label;
+                                    let ExerciseComponent;
+                                    switch (icon.data.exerciseType) {
+                                        case 'anaerobico': ExerciseComponent = <AnaerobicIcon className={themedClassAnaerobic}/>; break;
+                                        case 'aerobico': ExerciseComponent = <AerobicIcon className={themedClassAnaerobic}/>; break;
+                                        case 'paseo': ExerciseComponent = <WalkIcon className={themedClass}/>; break;
+                                        default: ExerciseComponent = <WeightlifterIcon className={themedClass}/>; break;
+                                    }
+                                    iconEl = ( <IconWithTooltip tooltipText={intensityLabel}><div className="flex items-center gap-1"> <span className="text-xs font-semibold text-gray-800 dark:text-white">{EXERCISE_TIME.find(opt => opt.value === icon.data.exerciseTime)?.label || ''}</span> {ExerciseComponent} </div></IconWithTooltip> ); 
+                                    break;
+                                case 'medico': iconEl = <IconWithTooltip tooltipText={icon.event?.message}><MedicalVisitIcon className={themedClass}/></IconWithTooltip>; break;
+                                case 'analisis': iconEl = <IconWithTooltip tooltipText={icon.event?.message}><AnalysisIcon className={themedClass}/></IconWithTooltip>; break;
+                                case 'bebida': iconEl = <IconWithTooltip tooltipText={icon.event?.message}><DrinkIcon className={themedClass}/></IconWithTooltip>; break;
+                                default: iconEl = null;
+                            }
+                            return <div key={icon.key}>{iconEl}</div>;
+                        })}
+                    </div>
+                    <WeeklyLossAnnotation day={d} entries={user.entries} profile={user.profile} isMobile={true} />
+                </button>
+            );
+        })}
+    </div>
 
-        {dayModalDate && <DayModal open={!!dayModalDate} onClose={()=>setDayModalDate(null)} date={dayModalDate} data={user} onSave={saveEntry} onDelete={removeEntry} onOpenEventModal={(type) => handleOpenEventModal(dayModalDate, type)} />}
-        {eventModal.open && <EventModal open={eventModal.open} onClose={() => setEventModal({ open: false, date: null, type: null, existing: null })} date={eventModal.date} onSave={saveEvent} onDelete={deleteEvent} existingEvent={eventModal.existing} eventType={eventModal.type} />}
-      </div>);
-    };
+    {dayModalDate && <DayModal open={!!dayModalDate} onClose={()=>setDayModalDate(null)} date={dayModalDate} data={user} onSave={saveEntry} onDelete={removeEntry} onOpenEventModal={(type) => handleOpenEventModal(dayModalDate, type)} />}
+    {eventModal.open && <EventModal open={eventModal.open} onClose={() => setEventModal({ open: false, date: null, type: null, existing: null })} date={eventModal.date} onSave={saveEvent} onDelete={deleteEvent} existingEvent={eventModal.existing} eventType={eventModal.type} />}
+  </div>);
+};
+// ====================== FIN DEL CÓDIGO ACTUALIZADO PARA CALENDARVIEW ======================
     const MilestoneIndicator = ({label, position}) => (
       <div className="absolute transition-transform duration-500" style={{top: 'calc(100% + 0.5rem)', left: `${position}%`, transform: 'translateX(-50%)'}}>
         <div className="relative flex flex-col items-center">
@@ -1063,461 +1347,291 @@ const StarIcon = ({ className, ...props }) => {
       </div>
     );
 
-    const ProgressView = ({user, scenario})=>{
-      const proj = calculateProjectionScenarios(user);
-      const feedback = generateDailyFeedback(user, {});
-      const {startWeight:firstW, targetWeight} = user.profile;
-      const allEntriesSorted = (user.entries || []).slice().sort((a,b)=>new Date(a.date)-new Date(b.date));
-      const lastW=(allEntriesSorted.filter(e=>e.weight!=null).pop()?.weight)??firstW;
-      const totalToLose=Math.max(0,firstW-targetWeight);
-      const lost=Math.max(0,firstW-lastW);
-      const pct=totalToLose>0?Math.min(100,(lost/totalToLose)*100):0;
-      const target80_kg = (firstW - (totalToLose * 0.8)).toFixed(1);
-      
-      const avgWater=allEntriesSorted.length?(allEntriesSorted.reduce((a,e)=>a+waterLiters(e.water),0)/allEntriesSorted.length):0;
-      const avgSleep=allEntriesSorted.length?(allEntriesSorted.reduce((a,e)=>a+sleepHours(e.sleep),0)/allEntriesSorted.length):0;
-      
-      const avgExWeek = React.useMemo(() => {
-        if (allEntriesSorted.length < 2) return 0;
-        const firstDate = new Date(allEntriesSorted[0].date);
-        const lastDate = new Date(allEntriesSorted[allEntriesSorted.length - 1].date);
-        const totalDaysSpan = ((lastDate - firstDate) / 86400000) + 1;
-        if (totalDaysSpan <= 0) return 0;
-        const totalExerciseHours = allEntriesSorted.reduce((acc, entry) => acc + exerciseHours(entry.exerciseTime || '0min'), 0);
-        const dailyAverage = totalExerciseHours / totalDaysSpan;
-        return dailyAverage * 7;
-      }, [allEntriesSorted]);
-      
-      const h=user.profile.height/100;
-      const currentProjection = proj.results ? proj.results[scenario] : null;
-
-      return(<div className="space-y-4">
-        <Card className="p-6">
-          {feedback.globalMessage && <div className="mb-4 text-center text-4xl font-handwriting text-gray-800 dark:text-gray-100 bg-gray-100 dark:bg-gray-600/50 p-4 rounded-lg">{feedback.globalMessage}</div>}
-          
-          <div className="relative pt-8 pb-12 px-4">
-            {pct > 0 && <div className="absolute top-0 transition-transform duration-500" style={{left: `${pct}%`, transform: 'translateX(-50%)'}}>
-              <div className="relative flex flex-col items-center">
-                <span className="px-2 py-0.5 bg-black dark:bg-white text-white dark:text-black text-sm font-bold rounded-md shadow-lg">{pct.toFixed(1)}%</span>
-                <div className="mt-1 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-black dark:border-t-white"></div>
-              </div>
-            </div>}
-            <div className="relative">
-                <div className="w-full h-8 bg-gray-200 dark:bg-gray-600 rounded-full border-2 border-gray-400 dark:border-gray-500 shadow-inner overflow-hidden">
-                    <div className="h-full transition-all duration-500 rounded-full" style={{width: `${pct}%`, background: 'linear-gradient(90deg, #06b6d4 0%, #3b82f6 100%)'}}></div>
-                </div>
-                <MilestoneIndicator label="80%" position={80} />
-                <MilestoneIndicator label="100%" position={100} />
-            </div>
-          </div>
-          
-          {feedback.actionMessages && feedback.actionMessages.length > 0 && <div className="mt-4 text-center text-3xl font-handwriting text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-600/50 p-4 rounded-lg">{feedback.actionMessages.join(' • ')}</div>}
-        </Card>
-
-        <div className="grid grid-cols-1 md:grid-cols-10 gap-4">
-          <Card className="col-span-10 md:col-span-7 p-3 text-center">
-            <div className="text-sm font-semibold text-gray-700 dark:text-gray-200">Objetivo intermedio <span className="font-bold text-blue-600 dark:text-blue-400">{target80_kg} kg</span> (80%)</div>
-            {currentProjection ? (<>
-              <div className="text-2xl font-bold text-gray-800 dark:text-white mt-1">{new Date(currentProjection.eta80).toLocaleDateString('es-ES',{day:'2-digit',month:'long', year:'numeric'})}</div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">Estimado en {humanizeDays(currentProjection.daysTo80)}</div>
-            </>) : <div className="text-lg text-gray-500 mt-2">{proj.message || 'Calculando...'}</div>}
-          </Card>
-          <Card className="col-span-10 md:col-span-3 p-3 text-center">
-            <div className="text-sm font-semibold text-gray-700 dark:text-gray-200">Objetivo final <span className="font-bold text-green-600 dark:text-green-400">{targetWeight} kg</span></div>
-            {currentProjection ? (<>
-              <div className="text-2xl font-bold text-gray-800 dark:text-white mt-1">{new Date(currentProjection.etaFinal).toLocaleDateString('es-ES',{day:'2-digit',month:'long', year:'numeric'})}</div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">Estimado en {humanizeDays(currentProjection.daysToFinal)}</div>
-            </>) : <div className="text-lg text-gray-500 mt-2">{proj.message || 'Calculando...'}</div>}
-          </Card>
-        </div>
-
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          <Card className="text-center"><div className="text-sm text-gray-600 dark:text-gray-300">Peso perdido</div><div className="text-3xl font-bold text-gray-800 dark:text-white">{lost.toFixed(1)} kg</div><div className="text-xs text-gray-500 dark:text-gray-400 mt-1">Actual: {lastW.toFixed(1)} kg</div></Card>
-          <Card className="text-center"><div className="text-sm text-gray-600 dark:text-gray-300">Peso restante</div><div className="text-3xl font-bold text-gray-800 dark:text-white">{(Math.max(0,lastW-targetWeight)).toFixed(1)} kg</div><div className="text-xs text-gray-500 dark:text-gray-400 mt-1">Objetivo: {targetWeight} kg</div></Card>
-          <Card className="text-center"><div className="text-sm text-gray-600 dark:text-gray-300">IMC</div><div className="text-2xl font-bold text-gray-800 dark:text-white">{h>0?`${(firstW/(h*h)).toFixed(1)} → ${(lastW/(h*h)).toFixed(1)}`:'N/A'}</div><div className="text-xs text-gray-500 dark:text-gray-400 mt-1">Obj: {h>0 ? (targetWeight/(h*h)).toFixed(1) : 'N/A'}</div></Card>
-          <Card className="text-center"><div className="text-sm text-gray-600 dark:text-gray-300">Media de agua</div><div className="text-2xl font-bold text-gray-800 dark:text-white">{avgWater.toFixed(2)} L</div></Card>
-          <Card className="text-center"><div className="text-sm text-gray-600 dark:text-gray-300">Media de sueño</div><div className="text-2xl font-bold text-gray-800 dark:text-white">{avgSleep.toFixed(1)} h</div></Card>
-          <Card className="text-center"><div className="text-sm text-gray-600 dark:text-gray-300">Ejercicio semanal</div><div className="text-2xl font-bold text-gray-800 dark:text-white">{avgExWeek.toFixed(1)} h</div></Card>
-        </div>
-      </div>); 
-    };
+// ====================== INICIO DEL CÓDIGO CORRECTO Y FINAL PARA PROGRESSVIEW ======================
+const ProgressView = ({user, scenario})=>{
+  const proj = calculateProjectionScenarios(user);
+  const feedback = generateDailyFeedback(user, {});
+  const {startWeight:firstW, targetWeight} = user.profile;
+  const allEntriesSorted = (user.entries || []).slice().sort((a,b)=>new Date(a.date)-new Date(b.date));
+  const lastW=(allEntriesSorted.filter(e=>e.weight!=null).pop()?.weight)??firstW;
+  const totalToLose=Math.max(0,firstW-targetWeight);
+  const lost=Math.max(0,firstW-lastW);
+  const pct=totalToLose>0?Math.min(100,(lost/totalToLose)*100):0;
+  const target80_kg = (firstW - (totalToLose * 0.8)).toFixed(1);
+  
+  const avgWater=allEntriesSorted.length?(allEntriesSorted.reduce((a,e)=>a+waterLiters(e.water),0)/allEntriesSorted.length):0;
+  const avgSleep=allEntriesSorted.length?(allEntriesSorted.reduce((a,e)=>a+sleepHours(e.sleep),0)/allEntriesSorted.length):0;
+  
+  const { avgExWeek, avgMeditationWeek, avgDailySteps } = React.useMemo(() => {
+    if (allEntriesSorted.length < 1) return { avgExWeek: 0, avgMeditationWeek: 0, avgDailySteps: 0 };
+    const firstDate = new Date(allEntriesSorted[0].date);
+    const lastDate = new Date(allEntriesSorted[allEntriesSorted.length - 1].date);
+    const totalDaysSpan = Math.max(1, ((lastDate - firstDate) / 86400000) + 1);
     
-    const ChartsView = ({user, theme})=>{ 
-        const refs=[React.useRef(null),React.useRef(null),React.useRef(null),React.useRef(null)]; 
-        React.useEffect(()=>{ 
-            const charts=[]; 
-            const destroy=()=>charts.forEach(c=>c.destroy()); 
-            destroy(); 
-            const entries=user.entries.slice().sort((a,b)=>new Date(a.date)-new Date(b.date));
-            if(entries.length === 0) return;
+    const totalExerciseHours = allEntriesSorted.reduce((acc, entry) => acc + exerciseHours(entry.exerciseTime || '0min'), 0);
+    const totalMeditationMinutes = allEntriesSorted.reduce((acc, entry) => acc + meditationMinutes(entry.meditationTime || '0min'), 0);
+    
+    const entriesWithSteps = allEntriesSorted.filter(e => e.dailySteps != null && e.dailySteps > 0);
+    const totalSteps = entriesWithSteps.reduce((acc, entry) => acc + entry.dailySteps, 0);
 
-            const chartEntries = entries.slice(-12);
-            const dietMap = { 'estricta': 1, 'correcta': 2, 'incorrecta': 3, 'mala': 4 };
-            const dietColors = { 'estricta': 'rgba(34, 197, 94, 0.35)', 'correcta': 'rgba(59, 130, 246, 0.35)', 'incorrecta': 'rgba(245, 158, 11, 0.35)', 'mala': 'rgba(239, 68, 68, 0.35)' };
-            
-            const weightsData = chartEntries.map(e => e.weight);
-            const shiftedWeights = chartEntries.length > 0 ? [...weightsData.slice(1), null] : [];
+    return {
+        avgExWeek: (totalExerciseHours / totalDaysSpan) * 7,
+        avgMeditationWeek: (totalMeditationMinutes / totalDaysSpan) * 7,
+        avgDailySteps: entriesWithSteps.length > 0 ? totalSteps / entriesWithSteps.length : 0
+    };
+  }, [allEntriesSorted]);
+  
+  const h=user.profile.height/100;
+  const currentProjection = proj.results ? proj.results[scenario] : null;
 
-            const visibleWeights = weightsData.filter(w => w != null);
-            const minWeight = visibleWeights.length ? Math.min(...visibleWeights) : null;
-            const maxWeight = visibleWeights.length ? Math.max(...visibleWeights) : null;
+  const kpiCards = [];
+  kpiCards.push(<Card key="lost" className="text-center"><div className="text-sm text-gray-600 dark:text-gray-300">Peso perdido</div><div className="text-3xl font-bold text-gray-800 dark:text-white">{lost.toFixed(1)} kg</div><div className="text-xs text-gray-500 dark:text-gray-400 mt-1">Actual: {lastW.toFixed(1)} kg</div></Card>);
+  kpiCards.push(<Card key="remaining" className="text-center"><div className="text-sm text-gray-600 dark:text-gray-300">Peso restante</div><div className="text-3xl font-bold text-gray-800 dark:text-white">{(Math.max(0,lastW-targetWeight)).toFixed(1)} kg</div><div className="text-xs text-gray-500 dark:text-gray-400 mt-1">Objetivo: {targetWeight} kg</div></Card>);
+  kpiCards.push(
+    <Card key="imc" className="text-center">
+        <div className="text-sm text-gray-600 dark:text-gray-300">IMC</div>
+        {h > 0 ? (
+            <div>
+                <div className="text-xl font-bold text-gray-800 dark:text-white leading-tight">Ini: {(firstW/(h*h)).toFixed(1)}</div>
+                <div className="text-xl font-bold text-gray-800 dark:text-white leading-tight">Act: {(lastW/(h*h)).toFixed(1)}</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">Obj: {(targetWeight/(h*h)).toFixed(1)}</div>
+            </div>
+        ) : ( <div className="text-2xl font-bold text-gray-800 dark:text-white">N/A</div> )}
+    </Card>
+  );
 
-            const weights=entries.filter(e=>e.weight!=null); 
-            const gluc=entries.filter(e=>e.glucose!=null); 
-            const ctxs=refs.map(r=>r.current?.getContext('2d')); 
-            const isDark = theme === 'dark';
-            const axisColor = isDark ? '#FFFFFF' : '#1f2937';
-            const gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'; 
-            const commonOptions = { responsive:true, maintainAspectRatio:false, interaction:{ intersect:false, mode:'index'}, plugins:{legend:{labels:{color:axisColor}}}, scales:{x:{ticks:{color:axisColor}, grid:{color:gridColor}}, y:{ticks:{color:axisColor}, grid:{color:gridColor}}} }; 
-            
-            if(chartEntries.length&&ctxs[0]){ 
-                const labels = chartEntries.map(e => e.date);
-                charts.push(new Chart(ctxs[0],{type:'bar', data:{ labels, datasets:[ 
-                    {type: 'line', label:'Peso(kg)', yAxisID:'y', data: shiftedWeights, borderColor: isDark ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 1)', backgroundColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)', borderWidth:4, tension:.3, pointRadius:3, pointHoverRadius:6, order: 0}, 
-                    {label:'Calidad Dieta', yAxisID: 'y1', data: chartEntries.map(e => dietMap[e.diet] || 0), backgroundColor: chartEntries.map(e => dietColors[e.diet] || 'rgba(128,128,128,0.5)'), order: 4 }, 
-                    {type: 'line', label:'Ejercicio(h)', yAxisID:'y1', data:chartEntries.map(e=>exerciseHours(e.exerciseTime)), borderColor:'rgb(239, 68, 68)', borderWidth:2.5, pointRadius:3, pointHoverRadius:6, fill: false, order: 1}, 
-                    {type: 'line', label:'Sueño(h)', yAxisID:'y1', data:chartEntries.map(e=>sleepHours(e.sleep)), borderColor:'rgb(147,51,234)', borderWidth:2.5, pointRadius:3, pointHoverRadius:6, fill: false, order: 2}, 
-                    {type: 'line', label:'Agua(L)', yAxisID:'y1', data:chartEntries.map(e=>waterLiters(e.water)), borderColor:'rgb(6,182,212)', borderWidth:2.5, pointRadius:3, pointHoverRadius:6, fill: false, order: 3} 
-                ] }, options:{...commonOptions, scales:{
-                    x: { ticks: { color: axisColor, callback: function(value, index) {
-                          const entry = chartEntries[index];
-                          if (!entry) return '';
-                          const d = new Date(entry.date + 'T00:00:00');
-                          const dayName = d.toLocaleDateString('es-ES', { weekday: 'short' });
-                          return dayName.charAt(0).toUpperCase() + dayName.slice(1).replace('.', '');
-                        }}, grid:{color:gridColor}
-                    },
-                    y:{position:'left', title:{display:true, text:'Peso (kg)', color:axisColor}, min: minWeight ? Math.floor(minWeight - 1) : undefined, max: maxWeight ? Math.ceil(maxWeight + 1) : undefined, ticks:{color:axisColor}, grid:{color:gridColor}}, 
-                    y1:{position:'right', title:{display:true, text:'Hábitos (horas/litros/calidad)', color:axisColor}, grid:{drawOnChartArea:false}, ticks: { stepSize: 1, color:axisColor }}
-                }}}));
-            } 
-            if(weights.length&&ctxs[1]){ const data=weights.map(e=>e.weight); charts.push(new Chart(ctxs[1],{type:'line',data:{labels:weights.map(e=>new Date(e.date).toLocaleDateString('es-ES')),datasets:[{label:'Peso(kg)',data,borderColor:'rgb(59,130,246)',backgroundColor:'rgba(59,130,246,0.3)',fill:true,tension:.3, pointRadius:2, pointHoverRadius:5},{label:'Objetivo',data:new Array(data.length).fill(user.profile.targetWeight),borderColor:'rgb(34,197,94)',borderWidth:2,pointRadius:0, borderDash:[5,5]}]},options:commonOptions}));} 
-            if(gluc.length&&ctxs[2]){
-                const glucoseChartOptions = {
-                    ...commonOptions,
-                    scales: {
-                        ...commonOptions.scales,
-                        x: {
-                            ...commonOptions.scales.x,
-                            ticks: {
-                                ...commonOptions.scales.x.ticks,
-                                callback: function(value, index){ 
-                                    const entry = gluc[index]; 
-                                    if(!entry) return ''; 
-                                    const d = new Date(entry.date + 'T00:00:00'); 
-                                    const dayName = d.toLocaleDateString('es-ES', {weekday:'short'}); 
-                                    return dayName.charAt(0).toUpperCase() + dayName.slice(1).replace('.',''); 
-                                }
+  if (avgWater > 0) kpiCards.push(<Card key="water" className="text-center"><div className="text-sm text-gray-600 dark:text-gray-300">Media de agua</div><div className="text-2xl font-bold text-gray-800 dark:text-white">{avgWater.toFixed(2)} L</div></Card>);
+  if (avgSleep > 0) kpiCards.push(<Card key="sleep" className="text-center"><div className="text-sm text-gray-600 dark:text-gray-300">Media de sueño</div><div className="text-2xl font-bold text-gray-800 dark:text-white">{avgSleep.toFixed(1)} h</div></Card>);
+  if (avgExWeek > 0) kpiCards.push(<Card key="exercise" className="text-center"><div className="text-sm text-gray-600 dark:text-gray-300">Ejercicio semanal</div><div className="text-2xl font-bold text-gray-800 dark:text-white">{avgExWeek.toFixed(1)} h</div></Card>);
+  if (avgMeditationWeek > 0) kpiCards.push(<Card key="meditation" className="text-center"><div className="text-sm text-gray-600 dark:text-gray-300">Meditación semanal</div><div className="text-2xl font-bold text-gray-800 dark:text-white">{avgMeditationWeek.toFixed(0)} min</div></Card>);
+  if (avgDailySteps > 0) kpiCards.push(<Card key="steps" className="text-center"><div className="text-sm text-gray-600 dark:text-gray-300">Media de pasos</div><div className="text-2xl font-bold text-gray-800 dark:text-white">{avgDailySteps.toLocaleString('es-ES', { maximumFractionDigits: 0 })}</div></Card>);
+
+  return(<div className="space-y-4">
+    <Card className="p-6">
+      {feedback.globalMessage && <div className="mb-4 text-center text-4xl font-handwriting text-gray-800 dark:text-gray-100 bg-gray-100 dark:bg-gray-600/50 p-4 rounded-lg">{feedback.globalMessage}</div>}
+      
+      <div className="relative pt-8 pb-12 px-4">
+        {pct > 0 && <div className="absolute top-0 transition-transform duration-500" style={{left: `${pct}%`, transform: 'translateX(-50%)'}}>
+          <div className="relative flex flex-col items-center">
+            <span className="px-2 py-0.5 bg-black dark:bg-white text-white dark:text-black text-sm font-bold rounded-md shadow-lg">{pct.toFixed(1)}%</span>
+            <div className="mt-1 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-black dark:border-t-white"></div>
+          </div>
+        </div>}
+        <div className="relative">
+            <div className="w-full h-8 bg-gray-200 dark:bg-gray-600 rounded-full border-2 border-gray-400 dark:border-gray-500 shadow-inner overflow-hidden">
+                <div className="h-full transition-all duration-500 rounded-full" style={{width: `${pct}%`, background: 'linear-gradient(90deg, #06b6d4 0%, #3b82f6 100%)'}}></div>
+            </div>
+            <MilestoneIndicator label="80%" position={80} />
+            <MilestoneIndicator label="100%" position={100} />
+        </div>
+      </div>
+      
+      {feedback.actionMessages && feedback.actionMessages.length > 0 && <div className="mt-4 text-center text-3xl font-handwriting text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-600/50 p-4 rounded-lg">{feedback.actionMessages.join(' • ')}</div>}
+    </Card>
+
+    <div className="grid grid-cols-1 md:grid-cols-10 gap-4">
+      <Card className="col-span-10 md:col-span-7 p-3 text-center">
+        <div className="text-sm font-semibold text-gray-700 dark:text-gray-200">Objetivo intermedio <span className="font-bold text-blue-600 dark:text-blue-400">{target80_kg} kg</span> (80%)</div>
+        {currentProjection ? (<>
+          <div className="text-2xl font-bold text-gray-800 dark:text-white mt-1">{new Date(currentProjection.eta80).toLocaleDateString('es-ES',{day:'2-digit',month:'long', year:'numeric'})}</div>
+          <div className="text-xs text-gray-500 dark:text-gray-400">Estimado en {humanizeDays(currentProjection.daysTo80)}</div>
+        </>) : <div className="text-lg text-gray-500 mt-2">{proj.message || 'Calculando...'}</div>}
+      </Card>
+      <Card className="col-span-10 md:col-span-3 p-3 text-center">
+        <div className="text-sm font-semibold text-gray-700 dark:text-gray-200">Objetivo final <span className="font-bold text-green-600 dark:text-green-400">{targetWeight} kg</span></div>
+        {currentProjection ? (<>
+          <div className="text-2xl font-bold text-gray-800 dark:text-white mt-1">{new Date(currentProjection.etaFinal).toLocaleDateString('es-ES',{day:'2-digit',month:'long', year:'numeric'})}</div>
+          <div className="text-xs text-gray-500 dark:text-gray-400">Estimado en {humanizeDays(currentProjection.daysToFinal)}</div>
+        </>) : <div className="text-lg text-gray-500 mt-2">{proj.message || 'Calculando...'}</div>}
+      </Card>
+    </div>
+
+    <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-4">
+      {kpiCards}
+    </div>
+  </div>); 
+};
+// ====================== FIN DEL CÓDIGO CORRECTO Y FINAL PARA PROGRESSVIEW ======================
+// ====================== INICIO DEL CÓDIGO NUEVO PARA CHARTSVIEW ======================
+const ChartsView = ({user, theme})=>{ 
+    const refs=[React.useRef(null),React.useRef(null),React.useRef(null),React.useRef(null)]; 
+    React.useEffect(()=>{ 
+        const charts=[]; 
+        const destroy=()=>charts.forEach(c=>c.destroy()); 
+        destroy(); 
+        const entries=user.entries.slice().sort((a,b)=>new Date(a.date)-new Date(b.date));
+        if(entries.length === 0) return;
+
+        const chartEntries = entries.slice(-12);
+        const dietMap = { 'estricta': 1, 'correcta': 2, 'incorrecta': 3, 'mala': 4 };
+        const dietColors = { 'estricta': 'rgba(34, 197, 94, 0.35)', 'correcta': 'rgba(59, 130, 246, 0.35)', 'incorrecta': 'rgba(245, 158, 11, 0.35)', 'mala': 'rgba(239, 68, 68, 0.35)' };
+        
+        const weightsData = chartEntries.map(e => e.weight);
+        const shiftedWeights = chartEntries.length > 0 ? [...weightsData.slice(1), null] : [];
+
+        const visibleWeights = weightsData.filter(w => w != null);
+        const minWeight = visibleWeights.length ? Math.min(...visibleWeights) : null;
+        const maxWeight = visibleWeights.length ? Math.max(...visibleWeights) : null;
+
+        const weights=entries.filter(e=>e.weight!=null); 
+        const gluc=entries.filter(e=>e.glucose!=null); 
+        const ctxs=refs.map(r=>r.current?.getContext('2d')); 
+        const isDark = theme === 'dark';
+        const axisColor = isDark ? '#FFFFFF' : '#1f2937';
+        const gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'; 
+        const commonOptions = { responsive:true, maintainAspectRatio:false, interaction:{ intersect:false, mode:'index'}, plugins:{legend:{labels:{color:axisColor}}}, scales:{x:{ticks:{color:axisColor}, grid:{color:gridColor}}, y:{ticks:{color:axisColor}, grid:{color:gridColor}}} }; 
+        
+        if(chartEntries.length&&ctxs[0]){ 
+            const labels = chartEntries.map(e => e.date);
+            charts.push(new Chart(ctxs[0],{type:'bar', data:{ labels, datasets:[ 
+                {type: 'line', label:'Peso(kg)', yAxisID:'y', data: shiftedWeights, borderColor: isDark ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 1)', backgroundColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)', borderWidth:4, tension:.3, pointRadius:3, pointHoverRadius:6, order: 0}, 
+                {label:'Calidad Dieta', yAxisID: 'y1', data: chartEntries.map(e => dietMap[e.diet] || 0), backgroundColor: chartEntries.map(e => dietColors[e.diet] || 'rgba(128,128,128,0.5)'), order: 4 }, 
+                {type: 'line', label:'Ejercicio(h)', yAxisID:'y1', data:chartEntries.map(e=>exerciseHours(e.exerciseTime)), borderColor:'rgb(239, 68, 68)', borderWidth:2.5, pointRadius:3, pointHoverRadius:6, fill: false, order: 1}, 
+                {type: 'line', label:'Sueño(h)', yAxisID:'y1', data:chartEntries.map(e=>sleepHours(e.sleep)), borderColor:'rgb(147,51,234)', borderWidth:2.5, pointRadius:3, pointHoverRadius:6, fill: false, order: 2}, 
+                {type: 'line', label:'Agua(L)', yAxisID:'y1', data:chartEntries.map(e=>waterLiters(e.water)), borderColor:'rgb(6,182,212)', borderWidth:2.5, pointRadius:3, pointHoverRadius:6, fill: false, order: 3} 
+            ] }, options:{...commonOptions, scales:{
+                x: { ticks: { color: axisColor, callback: function(value, index) {
+                      const entry = chartEntries[index];
+                      if (!entry) return '';
+                      const d = new Date(entry.date + 'T00:00:00');
+                      const dayName = d.toLocaleDateString('es-ES', { weekday: 'short' });
+                      return dayName.charAt(0).toUpperCase() + dayName.slice(1).replace('.', '');
+                    }}, grid:{color:gridColor}
+                },
+                y:{position:'left', title:{display:true, text:'Peso (kg)', color:axisColor}, min: minWeight ? Math.floor(minWeight - 1) : undefined, max: maxWeight ? Math.ceil(maxWeight + 1) : undefined, ticks:{color:axisColor}, grid:{color:gridColor}}, 
+                y1:{position:'right', title:{display:true, text:'Hábitos (horas/litros/calidad)', color:axisColor}, grid:{drawOnChartArea:false}, ticks: { stepSize: 1, color:axisColor }}
+            }}}));
+        } 
+        if(weights.length&&ctxs[1]){ const data=weights.map(e=>e.weight); charts.push(new Chart(ctxs[1],{type:'line',data:{labels:weights.map(e=>new Date(e.date).toLocaleDateString('es-ES')),datasets:[{label:'Peso(kg)',data,borderColor:'rgb(59,130,246)',backgroundColor:'rgba(59,130,246,0.3)',fill:true,tension:.3, pointRadius:2, pointHoverRadius:5},{label:'Objetivo',data:new Array(data.length).fill(user.profile.targetWeight),borderColor:'rgb(34,197,94)',borderWidth:2,pointRadius:0, borderDash:[5,5]}]},options:commonOptions}));} 
+        if(gluc.length&&ctxs[2]){
+            const glucoseChartOptions = {
+                ...commonOptions,
+                scales: {
+                    ...commonOptions.scales,
+                    x: {
+                        ...commonOptions.scales.x,
+                        ticks: {
+                            ...commonOptions.scales.x.ticks,
+                            callback: function(value, index){ 
+                                const entry = gluc[index]; 
+                                if(!entry) return ''; 
+                                const d = new Date(entry.date + 'T00:00:00'); 
+                                const dayName = d.toLocaleDateString('es-ES', {weekday:'short'}); 
+                                return dayName.charAt(0).toUpperCase() + dayName.slice(1).replace('.',''); 
                             }
                         }
                     }
-                };
-                charts.push(new Chart(ctxs[2],{type:'line',data:{labels:gluc.map(e=>e.date),datasets:[{label:'Glucosa(mg/dl)',data:gluc.map(e=>e.glucose),borderColor:'rgb(239,68,68)',backgroundColor:'rgba(239,68,68,0.3)',fill:true,tension:.3, pointRadius:2, pointHoverRadius:5}]},options: glucoseChartOptions}));
-            } 
-            if(ctxs[3]){const counts=user.entries.reduce((a,e)=>{if(e.diet)a[e.diet]=(a[e.diet]||0)+1;return a},{}); const data=Object.values(counts); if(data.length){charts.push(new Chart(ctxs[3],{type:'doughnut',data:{labels:Object.keys(counts).map(k=>DIET.find(d=>d.value===k)?.label||k),datasets:[{data,backgroundColor:['#22c55e','#3b82f6','#f59e0b','#ef4444'], borderColor: isDark ? '#1f2937' : '#fff', borderWidth:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:axisColor}}}}}));}} 
-            return()=>destroy();
-        },[user,theme]); 
-        
-        return(<div className="space-y-8">
-            <Card className="lg:col-span-2">
-                <h4 className="font-semibold text-gray-800 dark:text-white mb-1">Correlación de Hábitos y Peso (Últimos 12 días)</h4>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">ⓘ La línea de peso se muestra desplazada para correlacionar con los hábitos del día anterior.</p>
-                <div className="relative h-[320px]"><canvas ref={refs[0]} id="habits-chart"></canvas></div>
-            </Card>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <Card><h4 className="font-semibold text-gray-800 dark:text-white mb-2">Evolución del Peso (Histórico)</h4><div className="relative h-72"><canvas ref={refs[1]} id="weight-chart"></canvas></div></Card>
-                <Card><h4 className="font-semibold text-gray-800 dark:text-white mb-2">Glucosa (Histórico)</h4><div className="relative h-72"><canvas ref={refs[2]} id="glucose-chart"></canvas></div></Card>
-            </div>
-            <Card className="lg:col-span-2"><h4 className="font-semibold text-gray-800 dark:text-white mb-2">Distribución de Dieta (Histórico)</h4><div className="relative h-72"><canvas ref={refs[3]} id="diet-chart"></canvas></div></Card>
-        </div>);
+                }
+            };
+            charts.push(new Chart(ctxs[2],{type:'line',data:{labels:gluc.map(e=>e.date),datasets:[{label:'Glucosa(mg/dl)',data:gluc.map(e=>e.glucose),borderColor:'rgb(239,68,68)',backgroundColor:'rgba(239,68,68,0.3)',fill:true,tension:.3, pointRadius:2, pointHoverRadius:5}]},options: glucoseChartOptions}));
+        } 
+        if(ctxs[3]){const counts=user.entries.reduce((a,e)=>{if(e.diet)a[e.diet]=(a[e.diet]||0)+1;return a},{}); const data=Object.values(counts); if(data.length){charts.push(new Chart(ctxs[3],{type:'doughnut',data:{labels:Object.keys(counts).map(k=>DIET.find(d=>d.value===k)?.label||k),datasets:[{data,backgroundColor:['#22c55e','#3b82f6','#f59e0b','#ef4444'], borderColor: isDark ? '#1f2937' : '#fff', borderWidth:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:axisColor}}}}}));}} 
+        return()=>destroy();
+    },[user,theme]); 
+    
+    return(<div className="space-y-8">
+        <Card className="lg:col-span-2">
+            <h4 className="font-semibold text-gray-800 dark:text-white mb-1">Correlación de Hábitos y Peso (Últimos 12 días)</h4>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">ⓘ La línea de peso se muestra desplazada para correlacionar con los hábitos del día anterior.</p>
+            <div className="relative h-[320px]"><canvas ref={refs[0]} id="habits-chart"></canvas></div>
+        </Card>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <Card><h4 className="font-semibold text-gray-800 dark:text-white mb-2">Evolución del Peso (Histórico)</h4><div className="relative h-72"><canvas ref={refs[1]} id="weight-chart"></canvas></div></Card>
+            <Card><h4 className="font-semibold text-gray-800 dark:text-white mb-2">Glucosa (Histórico)</h4><div className="relative h-72"><canvas ref={refs[2]} id="glucose-chart"></canvas></div></Card>
+        </div>
+        <Card className="lg:col-span-2"><h4 className="font-semibold text-gray-800 dark:text-white mb-2">Distribución de Dieta (Histórico)</h4><div className="relative h-72"><canvas ref={refs[3]} id="diet-chart"></canvas></div></Card>
+    </div>);
+};
+// ====================== FIN DEL CÓDIGO NUEVO PARA CHARTSVIEW ======================
+
+// ====================== INICIO DEL CÓDIGO FINAL CON MEDIDAS (REORDENADO) PARA PROFILEVIEW ======================
+const ProfileView = ({user, setUser, theme})=>{ 
+    const [local,setLocal]=React.useState({...user.profile});
+    const [isSaving, setIsSaving] = React.useState(false);
+    const [measurementModal, setMeasurementModal] = React.useState(null); // 'choice', 'add', 'view'
+    const [editingMeasurement, setEditingMeasurement] = React.useState(null);
+
+    React.useEffect(()=>{setLocal(user.profile)},[user.profile]); 
+    
+    const save = () => {
+      setIsSaving(true);
+      setUser({...user, profile:local});
+      setTimeout(() => setIsSaving(false), 500);
     };
 
-const ProfileView = ({user, setUser, theme})=>{ 
-        const [local,setLocal]=React.useState({...user.profile});
-        const [isSaving, setIsSaving] = React.useState(false);
+    const handleSaveMeasurement = (measurementData) => {
+        const measurements = [...(user.measurements || [])];
+        const index = measurements.findIndex(m => m.id === measurementData.id);
+        if (index > -1) {
+            measurements[index] = measurementData;
+        } else {
+            measurements.push(measurementData);
+        }
+        setUser({ ...user, measurements });
+        setMeasurementModal('view'); // After saving, go to the view modal
+    };
 
-        React.useEffect(()=>{setLocal(user.profile)},[user.profile]); 
-        
-        const save = () => {
-          setIsSaving(true);
-          setUser({...user, profile:local});
-          setTimeout(() => setIsSaving(false), 500);
-        };
+    const handleDeleteMeasurement = (measurementId) => {
+        // Se elimina la confirmación emergente
+        const measurements = (user.measurements || []).filter(m => m.id !== measurementId);
+        setUser({ ...user, measurements });
+    };
+    
+    const handleEditMeasurement = (measurement) => {
+        setEditingMeasurement(measurement);
+        setMeasurementModal('add');
+    };
 
-        // ====================== INICIO: Lógica de Exportación (RECONSTRUIDA SOBRE LA VERSIÓN CORRECTA) ======================
-        
-        const exportJSON = (user) => {
-            const dataToExport = {
-                data_schema: {
-                    description: "Datos de seguimiento de salud y peso de la app ControlaTuPeso+.",
-                    version: "2.2",
-                    event_types: {
-                        especial: "Día especial (ej. cumpleaños, festivo, evento social)",
-                        medico: "Visita Médica o cita con profesional de la salud",
-                        analisis: "Control médico o análisis clínico",
-                        bebida: "Consumo de batido, infusión o bebida especial del plan"
-                    },
-                    diet_quality: {
-                        estricta: "Dieta seguida rigurosamente, sin desviaciones.",
-                        correcta: "Dieta seguida correctamente, con posibles desviaciones menores y controladas.",
-                        incorrecta: "Dieta con desviaciones notables que pueden afectar el resultado.",
-                        mala: "Dieta no seguida, con consumo de alimentos no recomendados."
-                    }
+    const handleOpenAddModal = () => {
+        setEditingMeasurement(null);
+        setMeasurementModal('add');
+    };
+
+    const exportJSON = (user) => {
+        const dataToExport = {
+            data_schema: {
+                version: "2.4",
+                description: "Datos de seguimiento de salud de la app ControlaTuPeso+. La fecha de inicio real del seguimiento es la fecha del primer registro en 'entries'.",
+                profile: {
+                    processStartDate: "Fecha ISO (YYYY-MM-DD) en la que se creó el perfil. Usar la primera fecha de 'entries' como el inicio real del proceso.",
+                    createdAt: "Fecha ISO técnica de creación del perfil en la app."
                 },
-                ...user
-            };
-
-            const blob = new Blob([JSON.stringify(dataToExport, null, 2)], {type:'application/json'});
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = `ControlaTuPeso+_${user.profile.name}.json`;
-            a.click();
-            URL.revokeObjectURL(a.href);
+                entries: "Registros diarios de peso, hábitos, etc.",
+                events: "Eventos programados (visitas médicas, días especiales, etc.).",
+                measurements: {
+                    id: "Timestamp único de la medición.",
+                    date: "Fecha de la medición (YYYY-MM-DD).",
+                    type: "Tipo de medida (string: 'circunferencia', 'pliegues').",
+                    muslos: "Medida en cm o mm (número o null).",
+                    cadera: "Medida en cm o mm (número o null).",
+                    cintura: "Medida en cm o mm (número o null).",
+                    pecho: "Medida en cm o mm (número o null).",
+                    brazo: "Medida en cm o mm (número o null)."
+                }
+            },
+            ...user
         };
-        
-         const exportPDF = async (user, theme) => {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF('p', 'mm', 'a4');
-            const pageWidth = doc.internal.pageSize.getWidth();
-            const pageHeight = doc.internal.pageSize.getHeight();
-            let y = 10;
 
-            // --- Cabecera ---
-            doc.setFillColor(30, 64, 175);
-            doc.rect(0, 0, 210, 22, 'F');
-            doc.setFont('helvetica', 'bold');
-            doc.setTextColor(255);
-            doc.setFontSize(18);
-            doc.text('ControlaTuPeso+', 14, 15);
-            const today = new Date().toLocaleDateString('es-ES', { year: 'numeric', month: '2-digit', day: '2-digit' });
-            doc.setFont('helvetica', 'normal');
-            doc.setFontSize(10);
-            doc.text(`Fecha de descarga: ${today}`, 210 - 14, 15, { align: 'right' });
-            
-            doc.setTextColor(0, 0, 0);
-            y = 32;
+        const blob = new Blob([JSON.stringify(dataToExport, null, 2)], {type:'application/json'});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `ControlaTuPeso+_${user.profile.name}.json`;
+        a.click();
+        URL.revokeObjectURL(a.href);
+    };
+    
+    const exportPDF = async (user, theme) => {
+        // El código de exportPDF se mantiene igual, no es necesario pegarlo de nuevo, se incluye para que el componente esté completo
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('p', 'mm', 'a4');
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
+        let y = 10;
+        doc.setFillColor(30, 64, 175); doc.rect(0, 0, 210, 22, 'F'); doc.setFont('helvetica', 'bold'); doc.setTextColor(255); doc.setFontSize(18); doc.text('ControlaTuPeso+', 14, 15); const today = new Date().toLocaleDateString('es-ES', { year: 'numeric', month: '2-digit', day: '2-digit' }); doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.text(`Fecha de descarga: ${today}`, 210 - 14, 15, { align: 'right' }); doc.setTextColor(0, 0, 0); y = 32; doc.setFontSize(14); doc.setFont('helvetica', 'bold'); doc.text('Perfil del Usuario', 14, y); y += 8; doc.setFontSize(11); doc.setFont('helvetica', 'normal'); doc.text(`Nombre: ${user.profile.name}`, 14, y); y += 6; const sortedEntries = user.entries.slice().sort((a, b) => new Date(a.date) - new Date(b.date)); const firstEntryDate = sortedEntries.length > 0 ? new Date(sortedEntries[0].date + 'T00:00:00').toLocaleDateString('es-ES') : new Date(user.profile.processStartDate || user.profile.createdAt).toLocaleDateString('es-ES'); doc.text(`Fecha de inicio del proceso: ${firstEntryDate}`, 14, y); y += 6; doc.text(`Altura: ${user.profile.height} cm`, 14, y); y += 6; doc.text(`Peso inicial / objetivo: ${user.profile.startWeight} kg / ${user.profile.targetWeight} kg`, 14, y); y += 6; if (user.profile.medication?.name) { doc.text(`Medicación 1: ${user.profile.medication.name} | Dosis: ${user.profile.medication.dose||'—'} | Inicio: ${user.profile.medication.startDate ? new Date(user.profile.medication.startDate+'T00:00:00').toLocaleDateString('es-ES') : '—'} | Frecuencia: Cada ${user.profile.medication.frequency||'—'} días`, 14, y); y += 6; } if (user.profile.medication2?.name) { doc.text(`Medicación 2: ${user.profile.medication2.name} | Dosis: ${user.profile.medication2.dose||'—'} | Inicio: ${user.profile.medication2.startDate ? new Date(user.profile.medication2.startDate+'T00:00:00').toLocaleDateString('es-ES') : '—'} | Frecuencia: Cada ${user.profile.medication2.frequency||'—'} días`, 14, y); y += 6; } y += 4; doc.setFontSize(14); doc.setFont('helvetica', 'bold'); doc.text('Resumen del Progreso', 14, y); y += 6; const h = user.profile.height/100; const firstW = user.profile.startWeight; const lastW = (user.entries.filter(e=>e.weight!=null).pop()?.weight) ?? firstW; const totalToLose = Math.max(0, firstW - user.profile.targetWeight); const lost = Math.max(0, firstW - lastW); const pct = totalToLose > 0 ? Math.min(100, (lost/totalToLose)*100) : 0; const proj = calculateProjectionScenarios(user); const projNeutro = proj.results ? proj.results.neutro : null; const { avgWater, avgSleep, avgExWeek, avgMeditationWeek, avgDailySteps } = (() => { if (sortedEntries.length < 1) return { avgWater: 0, avgSleep: 0, avgExWeek: 0, avgMeditationWeek: 0, avgDailySteps: 0 }; const firstDate = new Date(sortedEntries[0].date); const lastDate = new Date(sortedEntries[sortedEntries.length - 1].date); const totalDaysSpan = Math.max(1, ((lastDate - firstDate) / 86400000) + 1); const entriesWithSteps = sortedEntries.filter(e => e.dailySteps != null && e.dailySteps > 0); return { avgWater: sortedEntries.reduce((a,e)=>a+waterLiters(e.water),0)/sortedEntries.length, avgSleep: sortedEntries.reduce((a,e)=>a+sleepHours(e.sleep),0)/sortedEntries.length, avgExWeek: (sortedEntries.reduce((a,e)=>a+exerciseHours(e.exerciseTime),0) / totalDaysSpan) * 7, avgMeditationWeek: (sortedEntries.reduce((a,e)=>a+meditationMinutes(e.meditationTime),0) / totalDaysSpan) * 7, avgDailySteps: entriesWithSteps.length > 0 ? entriesWithSteps.reduce((a,e)=>a+e.dailySteps,0) / entriesWithSteps.length : 0 }; })(); const kpiBoxY = y; doc.setDrawColor(200); doc.roundedRect(14, kpiBoxY, 182, 62, 3, 3); let kpiY = kpiBoxY + 8; const xLabel1 = 20, xValue1 = 80, xLabel2 = 110, xValue2 = 170; doc.setFontSize(10); doc.setFont('helvetica', 'normal'); doc.text('Progreso alcanzado:', xLabel1, kpiY); doc.text(`${pct.toFixed(1)} %`, xValue1, kpiY); doc.text('Media consumo agua:', xLabel2, kpiY); doc.text(`${avgWater.toFixed(2)} L / día`, xValue2, kpiY); kpiY += 7; doc.text('Peso perdido:', xLabel1, kpiY); doc.text(`${lost.toFixed(1)} kg`, xValue1, kpiY); doc.text('Ejercicio semanal:', xLabel2, kpiY); doc.text(`${avgExWeek.toFixed(1)} h / sem`, xValue2, kpiY); kpiY += 7; doc.text('Peso actual:', xLabel1, kpiY); doc.text(`${lastW.toFixed(1)} kg`, xValue1, kpiY); doc.text('Media de sueño:', xLabel2, kpiY); doc.text(`${avgSleep.toFixed(1)} h / día`, xValue2, kpiY); kpiY += 7; doc.text('Peso por perder:', xLabel1, kpiY); doc.text(`${(Math.max(0, lastW - user.profile.targetWeight)).toFixed(1)} kg`, xValue1, kpiY); doc.text('Meditación semanal:', xLabel2, kpiY); doc.text(`${avgMeditationWeek.toFixed(0)} min / sem`, xValue2, kpiY); kpiY += 7; const targetIMC = h > 0 ? (user.profile.targetWeight/(h*h)).toFixed(1) : 'N/A'; doc.text('IMC (ini/act/obj):', xLabel1, kpiY); doc.text(h > 0 ? `${(firstW/(h*h)).toFixed(1)} / ${(lastW/(h*h)).toFixed(1)} / ${targetIMC}` : 'N/A', xValue1, kpiY); doc.text('Media de pasos:', xLabel2, kpiY); doc.text(`${avgDailySteps.toLocaleString('es-ES',{maximumFractionDigits:0})} / día`, xValue2, kpiY); kpiY += 10; doc.setFont('helvetica', 'bold'); doc.text('Días pendientes hasta objetivo:', xLabel1, kpiY); doc.text(projNeutro ? humanizeDays(projNeutro.daysToFinal) : (proj.message || 'N/A'), xValue1, kpiY); kpiY += 6; doc.text('Fecha de objetivo alcanzado:', xLabel1, kpiY); doc.text(projNeutro ? new Date(projNeutro.etaFinal).toLocaleDateString('es-ES',{day:'2-digit', month:'long', year:'numeric'}) : '—', xValue1, kpiY); y = kpiBoxY + 62 + 10; const renderChartToImage = async (chartConfig) => { const container = document.getElementById('pdf-charts-container'); if (!container) return null; const canvas = document.createElement('canvas'); canvas.width = 800; canvas.height = 400; container.appendChild(canvas); const chart = new Chart(canvas.getContext('2d'), chartConfig); await new Promise(resolve => setTimeout(resolve, 100)); const imgData = chart.toBase64Image('image/png', 1.0); chart.destroy(); container.innerHTML = ''; return imgData; }; const commonOptions = { responsive: false, maintainAspectRatio: false, animation: { duration: 0 }, plugins:{ legend:{ labels:{ color: '#1f2937' }}}, scales:{ x:{ ticks:{ color: '#1f2937' }, grid:{ color:'rgba(0,0,0,0.1)' }}, y:{ ticks:{ color: '#1f2937' }, grid:{ color:'rgba(0,0,0,0.1)' }}}}; if (y + 91 + 10 > pageHeight) { doc.addPage(); y = 20; } const chartEntries = user.entries.slice(-12); if (chartEntries.length) { doc.setFontSize(14); doc.setFont('helvetica', 'bold'); doc.text('Correlación de Hábitos y Peso (Últimos 12 días)', 14, y); y += 5; const dietMap = { 'estricta': 1, 'correcta': 2, 'incorrecta': 3, 'mala': 4 }; const dietColors = { 'estricta': 'rgba(34, 197, 94, 0.35)', 'correcta': 'rgba(59, 130, 246, 0.35)', 'incorrecta': 'rgba(245, 158, 11, 0.35)', 'mala': 'rgba(239, 68, 68, 0.35)' }; const weightsData = chartEntries.map(e => e.weight); const shiftedWeights = chartEntries.length > 0 ? [...weightsData.slice(1), null] : []; const visibleWeights = weightsData.filter(w => w != null); const minWeight = visibleWeights.length ? Math.min(...visibleWeights) : null; const maxWeight = visibleWeights.length ? Math.max(...visibleWeights) : null; const habitsConfig = {type:'bar', data:{ labels: chartEntries.map(e => new Date(e.date + 'T00:00:00').toLocaleDateString('es-ES', {weekday:'short'})), datasets:[ {type: 'line', label:'Peso(kg)', yAxisID:'y', data: shiftedWeights, borderColor: 'rgba(0, 0, 0, 1)', backgroundColor: 'rgba(0, 0, 0, 0.1)', borderWidth:4, tension:.3, order: 0}, {label:'Calidad Dieta', yAxisID: 'y1', data: chartEntries.map(e => dietMap[e.diet] || 0), backgroundColor: chartEntries.map(e => dietColors[e.diet] || 'rgba(128,128,128,0.5)'), order: 4 }, {type: 'line', label:'Ejercicio(h)', yAxisID:'y1', data:chartEntries.map(e=>exerciseHours(e.exerciseTime)), borderColor:'rgb(239, 68, 68)', borderWidth:2.5, fill: false, order: 1}, {type: 'line', label:'Sueño(h)', yAxisID:'y1', data:chartEntries.map(e=>sleepHours(e.sleep)), borderColor:'rgb(147,51,234)', borderWidth:2.5, fill: false, order: 2}, {type: 'line', label:'Agua(L)', yAxisID:'y1', data:chartEntries.map(e=>waterLiters(e.water)), borderColor:'rgb(6,182,212)', borderWidth:2.5, fill: false, order: 3} ] }, options:{...commonOptions, scales:{ ...commonOptions.scales, y:{position:'left', title:{display:true, text:'Peso (kg)', color:'#1f2937'}, min: minWeight ? Math.floor(minWeight - 1) : undefined, max: maxWeight ? Math.ceil(maxWeight + 1) : undefined, ticks:{color:'#1f2937'}, grid:{color:'rgba(0,0,0,0.1)'}}, y1:{position:'right', title:{display:true, text:'Hábitos', color:'#1f2937'}, grid:{drawOnChartArea:false}, ticks: { stepSize: 1, color:'#1f2937' }}}} }; const habitsChartImg = await renderChartToImage(habitsConfig); if (habitsChartImg) doc.addImage(habitsChartImg, 'PNG', 14, y, 182, 91); y += 96; } doc.addPage(); y = 20; const gluc = user.entries.filter(e=>e.glucose!=null); if (gluc.length) { doc.setFontSize(14); doc.setFont('helvetica', 'bold'); doc.text('Glucosa (Histórico)', 14, y); y += 5; const glucoseChartConfig = { type:'line', data:{ labels: gluc.map(e=>new Date(e.date).toLocaleDateString('es-ES')), datasets:[{label:'Glucosa(mg/dl)',data:gluc.map(e=>e.glucose),borderColor:'rgb(239,68,68)',backgroundColor:'rgba(239,68,68,0.3)',fill:true,tension:.3, pointRadius:2}]}, options: commonOptions }; const glucChartImg = await renderChartToImage(glucoseChartConfig); if (glucChartImg) doc.addImage(glucChartImg, 'PNG', 14, y, 182, 70); y += 75 + 10; } const rows = user.entries.slice(-25).reverse(); if (rows.length) { doc.setFontSize(14); doc.setFont('helvetica','bold'); doc.text('Últimos 25 registros', 14, y); y += 8; const cols = ['Peso','Gluc.','Fuerza','Anaerob.','Aerob.','Paseo','Sueño','Ayuno','Dieta','Agua']; const cw =   [16,    15,     22,      22,         22,       22,      16,     20,     20,     15]; const drawTableHeaders = () => { doc.setFontSize(9); doc.setFont('helvetica','bold'); let x = 14; const initialY = y; cols.forEach((c, i) => { doc.text(c, x + cw[i] / 2, initialY, { align: 'center' }); x += cw[i]; }); y = initialY + 3; doc.line(14, y, 14 + cw.reduce((a, b) => a + b, 0), y); y += 4; doc.setFontSize(8); doc.setFont('helvetica','normal'); }; drawTableHeaders(); rows.forEach(r => { if (y > 280) { doc.addPage(); y = 20; drawTableHeaders(); } const safeString = (val, fallback = '-') => (val !== null && val !== undefined && val !== '') ? String(val) : fallback; const intensityChar = r.exerciseIntensity ? `(${r.exerciseIntensity.charAt(0).toUpperCase()})` : ''; const exerciseTimeLabel = EXERCISE_TIME.find(opt => opt.value === r.exerciseTime)?.label || r.exerciseTime; const exerciseValue = (r.exerciseTime && r.exerciseTime !== '0min') ? `${exerciseTimeLabel} ${intensityChar}`.trim() : '-'; const vals = [ safeString(r.weight?.toFixed(1)), safeString(r.glucose), r.exerciseType === 'fuerza' ? exerciseValue : '-', r.exerciseType === 'anaerobico' ? exerciseValue : '-', r.exerciseType === 'aerobico' ? exerciseValue : '-', r.exerciseType === 'paseo' ? exerciseValue : '-', safeString(SLEEP.find(opt => opt.value === r.sleep)?.label), safeString(FASTING.find(opt => opt.value === r.fasting)?.label), safeString(DIET.find(opt => opt.value === r.diet)?.label), safeString(WATER.find(opt => opt.value === r.water)?.label) ]; let x2 = 14; vals.forEach((v, i) => { doc.text(v, x2 + cw[i] / 2, y, { align: 'center' }); x2 += cw[i]; }); y += 5; }); } const pageCount = doc.internal.getNumberOfPages(); for (let i = 1; i <= pageCount; i++) { doc.setPage(i); doc.setFontSize(8); doc.setTextColor(150); doc.text(`Informe generado el ${today} - Página ${i} de ${pageCount}`, pageWidth / 2, 290, { align: 'center' }); } doc.save(`Informe_ControlaTuPeso+_${user.profile.name}.pdf`);
+    };
 
-            // --- Perfil del Usuario ---
-            doc.setFontSize(14);
-            doc.setFont('helvetica', 'bold');
-            doc.text('Perfil del Usuario', 14, y);
-            y += 8;
-
-            doc.setFontSize(11);
-            doc.setFont('helvetica', 'normal');
-            doc.text(`Nombre: ${user.profile.name}`, 14, y);
-            y += 6;
-            
-            const sortedEntries = user.entries.slice().sort((a, b) => new Date(a.date) - new Date(b.date));
-            const firstEntryDate = sortedEntries[0] ? new Date(sortedEntries[0].date).toLocaleDateString('es-ES') : new Date(user.profile.createdAt).toLocaleDateString('es-ES');
-            doc.text(`Fecha de inicio: ${firstEntryDate}`, 14, y);
-            y += 6;
-            
-            doc.text(`Altura: ${user.profile.height} cm`, 14, y);
-            y += 6;
-            
-            doc.text(`Peso inicial / objetivo: ${user.profile.startWeight} kg / ${user.profile.targetWeight} kg`, 14, y);
-            y += 6;
-
-            if (user.profile.medication?.name) {
-                doc.text(`Medicación 1: ${user.profile.medication.name} | Dosis: ${user.profile.medication.dose||'—'} | Inicio: ${user.profile.medication.startDate ? new Date(user.profile.medication.startDate+'T00:00:00').toLocaleDateString('es-ES') : '—'} | Frecuencia: Cada ${user.profile.medication.frequency||'—'} días`, 14, y);
-                y += 6;
-            }
-            if (user.profile.medication2?.name) {
-                doc.text(`Medicación 2: ${user.profile.medication2.name} | Dosis: ${user.profile.medication2.dose||'—'} | Inicio: ${user.profile.medication2.startDate ? new Date(user.profile.medication2.startDate+'T00:00:00').toLocaleDateString('es-ES') : '—'} | Frecuencia: Cada ${user.profile.medication2.frequency||'—'} días`, 14, y);
-                y += 6;
-            }
-            y += 4;
-
-            // --- Resumen del Progreso ---
-            doc.setFontSize(14);
-            doc.setFont('helvetica', 'bold');
-            doc.text('Resumen del Progreso', 14, y);
-            y += 6;
-            
-            const h = user.profile.height/100;
-            const firstW = user.profile.startWeight;
-            const lastW = (user.entries.filter(e=>e.weight!=null).pop()?.weight) ?? firstW;
-            const totalToLose = Math.max(0, firstW - user.profile.targetWeight);
-            const lost = Math.max(0, firstW - lastW);
-            const pct = totalToLose > 0 ? Math.min(100, (lost/totalToLose)*100) : 0;
-            const proj = calculateProjectionScenarios(user);
-            const projNeutro = proj.results ? proj.results.neutro : null; 
-            const avgWater = sortedEntries.length ? (sortedEntries.reduce((a,e)=>a+waterLiters(e.water),0)/sortedEntries.length) : 0;
-            const avgSleep = sortedEntries.length ? (sortedEntries.reduce((a,e)=>a+sleepHours(e.sleep),0)/sortedEntries.length) : 0;
-            let avgExWeek = 0;
-            if (sortedEntries.length >= 2) {
-                const firstDate = new Date(sortedEntries[0].date);
-                const lastDate = new Date(sortedEntries[sortedEntries.length - 1].date);
-                const totalDaysSpan = ((lastDate - firstDate) / 86400000) + 1;
-                const totalEx = sortedEntries.reduce((a,e)=>a+exerciseHours(e.exerciseTime),0);
-                if (totalDaysSpan > 0) avgExWeek = (totalEx / totalDaysSpan) * 7;
-            }
-            
-            const kpiBoxY = y; 
-            doc.setDrawColor(200);
-            doc.roundedRect(14, kpiBoxY, 182, 76, 3, 3);
-            let kpiY = kpiBoxY + 10; const xLabel1 = 20, xValue1 = 80, xLabel2 = 110, xValue2 = 165; doc.setFontSize(11); doc.setFont('helvetica', 'normal'); doc.text('Progreso alcanzado:', xLabel1, kpiY); doc.text(`${pct.toFixed(1)} %`, xValue1, kpiY); doc.text('Media consumo agua:', xLabel2, kpiY); doc.text(`${avgWater.toFixed(2)} L / día`, xValue2, kpiY); kpiY += 8; doc.text('Peso perdido:', xLabel1, kpiY); doc.text(`${lost.toFixed(1)} kg`, xValue1, kpiY); doc.text('Ejercicio semanal:', xLabel2, kpiY); doc.text(`${avgExWeek.toFixed(1)} h / sem`, xValue2, kpiY); kpiY += 8; doc.text('Peso actual:', xLabel1, kpiY); doc.text(`${lastW.toFixed(1)} kg`, xValue1, kpiY); doc.text('Media de sueño:', xLabel2, kpiY); doc.text(`${avgSleep.toFixed(1)} h / día`, xValue2, kpiY); kpiY += 8; doc.text('Peso por perder:', xLabel1, kpiY); doc.text(`${(Math.max(0, lastW - user.profile.targetWeight)).toFixed(1)} kg`, xValue1, kpiY); const targetIMC = h > 0 ? (user.profile.targetWeight/(h*h)).toFixed(1) : 'N/A'; doc.text('IMC (ini/act/obj):', xLabel2, kpiY); doc.text(h > 0 ? `${(firstW/(h*h)).toFixed(1)} / ${(lastW/(h*h)).toFixed(1)} / ${targetIMC}` : 'N/A', xValue2, kpiY); kpiY += 14; doc.setFont('helvetica', 'bold'); doc.text('Días pendientes hasta objetivo:', xLabel1, kpiY); doc.text(projNeutro ? humanizeDays(projNeutro.daysToFinal) : 'N/A', xValue1, kpiY); kpiY += 6; doc.text('Fecha de objetivo alcanzado:', xLabel1, kpiY); doc.text(projNeutro ? new Date(projNeutro.etaFinal).toLocaleDateString('es-ES',{day:'2-digit', month:'long', year:'numeric'}) : '—', xValue1, kpiY);
-            y = kpiBoxY + 76 + 10;
-            
-            const renderChartToImage = async (chartConfig) => {
-                const container = document.getElementById('pdf-charts-container');
-                if (!container) return null;
-                const canvas = document.createElement('canvas');
-                canvas.width = 800; canvas.height = 400;
-                container.appendChild(canvas);
-                const chart = new Chart(canvas.getContext('2d'), chartConfig);
-                await new Promise(resolve => setTimeout(resolve, 100));
-                const imgData = chart.toBase64Image('image/png', 1.0);
-                chart.destroy();
-                container.innerHTML = '';
-                return imgData;
-            };
-
-            const commonOptions = { responsive: false, maintainAspectRatio: false, animation: { duration: 0 }, plugins:{ legend:{ labels:{ color: '#1f2937' }}}, scales:{ x:{ ticks:{ color: '#1f2937' }, grid:{ color:'rgba(0,0,0,0.1)' }}, y:{ ticks:{ color: '#1f2937' }, grid:{ color:'rgba(0,0,0,0.1)' }}}};
-            
-            if (y + 91 + 10 > pageHeight) {
-                doc.addPage();
-                y = 20;
-            }
-            
-            const chartEntries = user.entries.slice(-12);
-            if (chartEntries.length) {
-                doc.setFontSize(14); doc.setFont('helvetica', 'bold');
-                doc.text('Correlación de Hábitos y Peso (Últimos 12 días)', 14, y);
-                y += 5;
-                const dietMap = { 'estricta': 1, 'correcta': 2, 'incorrecta': 3, 'mala': 4 };
-                const dietColors = { 'estricta': 'rgba(34, 197, 94, 0.35)', 'correcta': 'rgba(59, 130, 246, 0.35)', 'incorrecta': 'rgba(245, 158, 11, 0.35)', 'mala': 'rgba(239, 68, 68, 0.35)' };
-                const weightsData = chartEntries.map(e => e.weight);
-                const shiftedWeights = chartEntries.length > 0 ? [...weightsData.slice(1), null] : [];
-
-                // ========= INICIO DE LA CORRECCIÓN =========
-                // 1. Calculamos el rango de peso, igual que en la app.
-                const visibleWeights = weightsData.filter(w => w != null);
-                const minWeight = visibleWeights.length ? Math.min(...visibleWeights) : null;
-                const maxWeight = visibleWeights.length ? Math.max(...visibleWeights) : null;
-                // ========= FIN DE LA CORRECCIÓN =========
-
-                const habitsConfig = {type:'bar', data:{ labels: chartEntries.map(e => new Date(e.date + 'T00:00:00').toLocaleDateString('es-ES', {weekday:'short'})), datasets:[ {type: 'line', label:'Peso(kg)', yAxisID:'y', data: shiftedWeights, borderColor: 'rgba(0, 0, 0, 1)', backgroundColor: 'rgba(0, 0, 0, 0.1)', borderWidth:4, tension:.3, order: 0}, {label:'Calidad Dieta', yAxisID: 'y1', data: chartEntries.map(e => dietMap[e.diet] || 0), backgroundColor: chartEntries.map(e => dietColors[e.diet] || 'rgba(128,128,128,0.5)'), order: 4 }, {type: 'line', label:'Ejercicio(h)', yAxisID:'y1', data:chartEntries.map(e=>exerciseHours(e.exerciseTime)), borderColor:'rgb(239, 68, 68)', borderWidth:2.5, fill: false, order: 1}, {type: 'line', label:'Sueño(h)', yAxisID:'y1', data:chartEntries.map(e=>sleepHours(e.sleep)), borderColor:'rgb(147,51,234)', borderWidth:2.5, fill: false, order: 2}, {type: 'line', label:'Agua(L)', yAxisID:'y1', data:chartEntries.map(e=>waterLiters(e.water)), borderColor:'rgb(6,182,212)', borderWidth:2.5, fill: false, order: 3} ] }, 
-                    options:{...commonOptions, scales:{ 
-                        ...commonOptions.scales, 
-                        // 2. Aplicamos el rango calculado al eje Y del peso.
-                        y: { 
-                            position: 'left', 
-                            title: { display: true, text: 'Peso (kg)', color: '#1f2937' }, 
-                            min: minWeight ? Math.floor(minWeight - 1) : undefined, 
-                            max: maxWeight ? Math.ceil(maxWeight + 1) : undefined, 
-                            ticks: { color: '#1f2937' }, 
-                            grid: { color: 'rgba(0,0,0,0.1)' } 
-                        },
-                        y1:{position:'right', title:{display:true, text:'Hábitos', color:'#1f2937'}, grid:{drawOnChartArea:false}, ticks: { stepSize: 1, color:'#1f2937' }}
-                    }}
-                };
-                const habitsChartImg = await renderChartToImage(habitsConfig);
-                doc.addImage(habitsChartImg, 'PNG', 14, y, 182, 91);
-                y += 96;
-            }
-
-            doc.addPage();
-            y = 20;
-
-            const gluc = user.entries.filter(e=>e.glucose!=null);
-            if (gluc.length) {
-                doc.setFontSize(14); doc.setFont('helvetica', 'bold');
-                doc.text('Glucosa (Histórico)', 14, y);
-                y += 5;
-                const glucoseChartConfig = { type:'line', data:{ labels: gluc.map(e=>new Date(e.date).toLocaleDateString('es-ES')), datasets:[{label:'Glucosa(mg/dl)',data:gluc.map(e=>e.glucose),borderColor:'rgb(239,68,68)',backgroundColor:'rgba(239,68,68,0.3)',fill:true,tension:.3, pointRadius:2}]}, options: commonOptions };
-                const glucChartImg = await renderChartToImage(glucoseChartConfig);
-                doc.addImage(glucChartImg, 'PNG', 14, y, 182, 70);
-                y += 75 + 10;
-            }
-            
-            const rows = user.entries.slice(-20).reverse();
-            if (rows.length) {
-                doc.setFontSize(14); doc.setFont('helvetica','bold');
-                doc.text('Últimos 20 registros', 14, y);
-                y += 8;
-                
-                const cols = ['Fecha','Peso','Glucosa','','','Sueño','Ayuno','Dieta','Agua'];
-                const cw = [22, 15, 17, 24, 25, 18, 25, 20, 15];
-                
-                const drawTableHeaders = () => {
-                    doc.setFontSize(9); doc.setFont('helvetica','bold');
-                    let x = 14;
-                    const initialY = y;
-
-                    cols.forEach((c, i) => {
-                        if (i !== 3 && i !== 4) {
-                            doc.text(c, x + cw[i] / 2, initialY, { align: 'center' });
-                        }
-                        x += cw[i];
-                    });
-
-                    const exerciseX_start = 14 + cw[0] + cw[1] + cw[2];
-                    const exerciseWidth_total = cw[3] + cw[4];
-                    doc.text('Tipo de ejercicio', exerciseX_start + exerciseWidth_total / 2, initialY, { align: 'center' });
-                    
-                    const subHeaderY = initialY + 5;
-                    doc.setFont('helvetica', 'normal');
-                    doc.text('Fuerza', exerciseX_start + cw[3] / 2, subHeaderY, { align: 'center' });
-                    doc.text('Anaeróbico', exerciseX_start + cw[3] + cw[4] / 2, subHeaderY, { align: 'center' });
-                    
-                    y = subHeaderY + 3;
-                    doc.line(14, y, 14 + cw.reduce((a, b) => a + b, 0), y);
-                    y += 4;
-                    doc.setFont('helvetica','normal');
-                };
-
-                drawTableHeaders();
-
-                rows.forEach(r => {
-                    if (y > 280) {
-                        doc.addPage();
-                        y = 20;
-                        drawTableHeaders();
-                    }
-                    const safeString = (val, fallback = '-') => (val !== null && val !== undefined && val !== '') ? String(val) : fallback;
-
-                    const exerciseTimeLabel = EXERCISE_TIME.find(opt => opt.value === r.exerciseTime)?.label;
-                    const exerciseValue = (r.exerciseTime && r.exerciseTime !== '0min') ? (exerciseTimeLabel || r.exerciseTime) : '-';
-                    
-                    const exerciseFuerza = r.exerciseType === 'fuerza' ? exerciseValue : '-';
-                    const exerciseAnaerobico = r.exerciseType === 'anaerobico' ? exerciseValue : '-';
-
-                    const vals = [
-                        safeString(new Date(r.date+'T00:00:00').toLocaleDateString('es-ES')),
-                        safeString(r.weight?.toFixed(1)),
-                        safeString(r.glucose),
-                        safeString(exerciseFuerza),
-                        safeString(exerciseAnaerobico),
-                        safeString(r.sleep),
-                        safeString(r.fasting),
-                        safeString(r.diet),
-                        safeString(r.water)
-                    ];
-
-                    let x2 = 14;
-                    vals.forEach((v, i) => { 
-                        doc.text(v, x2 + cw[i] / 2, y, { align: 'center' });
-                        x2 += cw[i]; 
-                    });
-                    y += 5;
-                });
-            }
-
-            const pageCount = doc.internal.getNumberOfPages();
-            for (let i = 1; i <= pageCount; i++) {
-                doc.setPage(i);
-                doc.setFontSize(8);
-                doc.setTextColor(150);
-                doc.text(`Informe generado el ${today} - Página ${i} de ${pageCount}`, pageWidth / 2, 290, { align: 'center' });
-            }
-
-            doc.save(`Informe_ControlaTuPeso+_${user.profile.name}.pdf`);
-        };
-        // ====================== FIN: Lógica de Exportación ======================
-
-        return(<div className={`space-y-4 transition-opacity duration-500 ${isSaving ? 'opacity-10' : 'opacity-100'}`}>
+    return(<>
+        <div className={`space-y-4 transition-opacity duration-500 ${isSaving ? 'opacity-10' : 'opacity-100'}`}>
             <Card>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                     <Input containerClassName="col-span-2 md:col-span-1" label="Nombre" value={local.name || ''} onChange={(e)=>setLocal(s=>({...s,name:e.target.value}))}/>
@@ -1525,22 +1639,48 @@ const ProfileView = ({user, setUser, theme})=>{
                     <Select containerClassName="col-span-1" label="Biología" options={[{value:'hombre', label:'Hombre'}, {value:'mujer', label:'Mujer'}]} value={local.biology || 'hombre'} onChange={(e)=>setLocal(s=>({...s,biology:e.target.value}))}/>
                     <Input containerClassName="col-span-1" label="Altura (cm)" type="number" value={local.height || ''} onChange={(e)=>setLocal(s=>({...s,height:parseInt(e.target.value||'0')}))}/>
                     <Input containerClassName="col-span-1" label="Peso inicial (kg)" type="number" step="0.1" value={local.startWeight || ''} onChange={(e)=>setLocal(s=>({...s,startWeight:parseFloat(e.target.value||'0')}))}/>
-                    <Input containerClassName="col-span-2 md:col-span-1" label="Peso objetivo (kg)" type="number" step="0.1" value={local.targetWeight || ''} onChange={(e)=>setLocal(s=>({...s,targetWeight:parseFloat(e.target.value||'0')}))}/>
+                    <Input containerClassName="col-span-1" label="Peso objetivo (kg)" type="number" step="0.1" value={local.targetWeight || ''} onChange={(e)=>setLocal(s=>({...s,targetWeight:parseFloat(e.target.value||'0')}))}/>
+                    <div className="space-y-1 col-span-2 md:col-span-1">
+                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Medidas Corporales</label>
+                        <Button onClick={() => setMeasurementModal('choice')} variant="outline" className="w-full justify-start text-left font-normal">
+                            Gestionar medidas...
+                        </Button>
+                    </div>
                 </div>
             </Card>
             <Card>
                 <div className="space-y-3">
                     <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-5 gap-3">
-                        <Input containerClassName="col-span-2 md:col-span-2" label="Medicación 1" value={local.medication?.name||''} onChange={(e)=>setLocal(s=>({...s,medication:{...(s.medication || {}),name:e.target.value}}))}/>
+                        <Input 
+                            containerClassName="col-span-2 md:col-span-2"
+                            label={
+                                <div className="flex items-center gap-2">
+                                    <span>Medicación</span>
+                                    <InjectionIcon className="w-5 h-5" />
+                                </div>
+                            }
+                            value={local.medication?.name||''} 
+                            onChange={(e)=>setLocal(s=>({...s,medication:{...(s.medication || {}),name:e.target.value}}))}
+                        />
                         <Input containerClassName="col-span-1" label="Dosis" value={local.medication?.dose||''} onChange={(e)=>setLocal(s=>({...s,medication:{...(s.medication || {}),dose:e.target.value}}))}/>
                         <Input containerClassName="col-span-1" type="date" label="Día de inicio" value={local.medication?.startDate||''} onChange={(e)=>setLocal(s=>({...s,medication:{...(s.medication || {}),startDate:e.target.value||null}}))}/>
                         <Input containerClassName="col-span-1" type="number" label="Cada ___ días" value={local.medication?.frequency||''} onChange={(e)=>setLocal(s=>({...s,medication:{...(s.medication || {}),frequency:parseInt(e.target.value)||null}}))}/>
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-5 gap-3">
-                        <Input containerClassName="col-span-2 md:col-span-2" label="Medicación 2" value={local.medication2?.name||''} onChange={(e)=>setLocal(s=>({...s,medication2:{...(s.medication2 || {}),name:e.target.value}}))}/>
-                        <Input containerClassName="col-span-1" label="Dosis" value={local.medication2?.dose||''} onChange={(e)=>setLocal(s=>({...s,medication2:{...(s.medication2 || {}),dose:e.target.value}}))}/>
-                        <Input containerClassName="col-span-1" type="date" label="Día de inicio" value={local.medication2?.startDate||''} onChange={(e)=>setLocal(s=>({...s,medication2:{...(s.medication2 || {}),startDate:e.target.value||null}}))}/>
-                        <Input containerClassName="col-span-1" type="number" label="Cada ___ días" value={local.medication2?.frequency||''} onChange={(e)=>setLocal(s=>({...s,medication2:{...(s.medication2 || {}),frequency:parseInt(e.target.value)||null}}))}/>
+                       <Input 
+                            containerClassName="col-span-2 md:col-span-2"
+                            label={
+                                <div className="flex items-center gap-2">
+                                    <span>Medicación</span>
+                                    <PillIcon className="w-5 h-5" />
+                                </div>
+                            }
+                            value={local.medication2?.name||''} 
+                            onChange={(e)=>setLocal(s=>({...s,medication2:{...(s.medication2 || {}),name:e.target.value}}))}
+                       />
+                       <Input containerClassName="col-span-1" label="Dosis" value={local.medication2?.dose||''} onChange={(e)=>setLocal(s=>({...s,medication2:{...(s.medication2 || {}),dose:e.target.value}}))}/>
+                       <Input containerClassName="col-span-1" type="date" label="Día de inicio" value={local.medication2?.startDate||''} onChange={(e)=>setLocal(s=>({...s,medication2:{...(s.medication2 || {}),startDate:e.target.value||null}}))}/>
+                       <Input containerClassName="col-span-1" type="number" label="Cada ___ días" value={local.medication2?.frequency||''} onChange={(e)=>setLocal(s=>({...s,medication2:{...(s.medication2 || {}),frequency:parseInt(e.target.value)||null}}))}/>
                     </div>
                 </div>
             </Card>
@@ -1556,9 +1696,14 @@ const ProfileView = ({user, setUser, theme})=>{
                     <div className="tooltip-wrap relative"><Button variant="outline" onClick={()=>exportPDF(user, theme)}>Generar PDF</Button><div className="tooltip">Crea un informe profesional, listo para imprimir o compartir.</div></div>
                 </div>
             </Card>
-        </div>);
-    };
+        </div>
 
+        <MeasurementChoiceModal open={measurementModal === 'choice'} onClose={() => setMeasurementModal(null)} onSelect={(choice) => { if(choice === 'add') { handleOpenAddModal(); } else { setMeasurementModal(choice); } }} />
+        <AddMeasurementModal open={measurementModal === 'add'} onClose={() => setMeasurementModal(null)} onSave={handleSaveMeasurement} existingMeasurement={editingMeasurement} />
+        <ViewMeasurementsModal open={measurementModal === 'view'} onClose={() => setMeasurementModal(null)} measurements={user.measurements || []} onEdit={handleEditMeasurement} onDelete={handleDeleteMeasurement} />
+    </>);
+};
+// ====================== FIN DEL CÓDIGO FINAL CON MEDIDAS (REORDENADO) PARA PROFILEVIEW ======================
 
     // ====================== Componente Principal de la App ======================
     const App = ()=>{
@@ -1692,8 +1837,4 @@ const ProfileView = ({user, setUser, theme})=>{
 </script>
 
 </body>
-
 </html>
-
-
-
