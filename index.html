@@ -650,7 +650,6 @@ const Card = ({children, className='', ...props})=> <div className={`bg-white/75
                 const Input = ({label, containerClassName='', ...props})=>( <div className={`space-y-1 ${containerClassName}`}>{label && <label className="text-base font-medium text-gray-800 dark:text-gray-200">{label}</label>}<input {...props} className={`w-full px-3 py-2 rounded-lg border-2 border-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-white dark:border-gray-500 ${props.className||''}`}/></div> );
     const Select = ({label, options=[], value, onChange, containerClassName='', className=''})=> ( <div className={`space-y-1 ${containerClassName}`}>{label && <label className="text-base font-medium text-gray-800 dark:text-gray-200">{label}</label>}<select value={value??''} onChange={onChange} className={`w-full px-3 py-2 rounded-lg border-2 border-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-white dark:border-gray-500 ${className}`}>{options.map(o=> <option key={o.value} value={o.value}>{o.label}</option>)}</select></div> );
 
-
 // Componente de entrada de fecha personalizado
 const CustomDateInput = ({ label, value, onChange, containerClassName = "" }) => {
   // 1. Creamos una "referencia" para poder comunicarnos con el campo de fecha.
@@ -676,23 +675,52 @@ const CustomDateInput = ({ label, value, onChange, containerClassName = "" }) =>
     </div>
   );
 };
-const Modal = ({open,onClose,children,size='md', customHeader})=>{
-  if(!open) return null;
-  const w = size==='lg'?'max-w-4xl':size==='md'?'max-w-2xl':'max-w-lg';
+// ====================== INICIO DEL NUEVO COMPONENTE AppModalHeader ======================
+const AppModalHeader = ({ title, onClose }) => (
+  <div className="relative overflow-hidden flex items-center justify-between border-b-2 border-gray-300 dark:border-gray-600 p-4">
+    {/*
+      * CORRECCIÓN CLAVE: La opacidad ahora es /80 en lugar de /50
+    */}
+    <div className="absolute inset-0 bg-gradient-to-l from-blue-200/100 dark:from-blue-800/55 to-transparent pointer-events-none z-0"></div>
+    <h3 className="relative z-10 text-lg font-semibold text-gray-800 dark:text-white">{title}</h3>
+    {onClose && (
+      <button onClick={onClose} className="relative z-20 px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-800 dark:text-white">✕</button>
+    )}
+  </div>
+);
+// ====================== FIN DEL NUEVO COMPONENTE AppModalHeader ======================
+// ====================== INICIO DEL CÓDIGO ACTUALIZADO Y CORRECTO PARA Modal ======================
+const Modal = ({open, onClose, children, size = 'md', customHeader}) => {
+  if (!open) return null;
+  const w = size === 'lg' ? 'max-w-4xl' : size === 'md' ? 'max-w-2xl' : 'max-w-lg';
 
   return (
     <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
-      {/* Contenedor con imagen de fondo */}
-      <div className={`w-full ${w} max-h-[90vh] overflow-hidden modal-background bg-cover bg-center rounded-2xl elevated-border shadow-lg flex flex-col`}>
-        {/* Capa de cristal esmerilado */}
-        <div className="w-full h-full bg-white/30 dark:bg-gray-900/30 backdrop-blur-md rounded-2xl flex flex-col overflow-y-auto">
+      {/* Contenedor principal del modal */}
+      <div className={`w-full ${w} max-h-[90vh] modal-background bg-cover bg-center rounded-2xl elevated-border shadow-lg flex flex-col`}>
+        {/* Capa de cristal esmerilado que envuelve todo */}
+        <div className="w-full h-full bg-white/30 dark:bg-gray-900/30 backdrop-blur-md rounded-2xl flex flex-col overflow-hidden">
+          {/*
+            * INICIO DE LA CORRECCIÓN CLAVE
+            * 1. El encabezado (customHeader) se renderiza aquí, en la parte superior y FIJA.
+            *    Ya no está dentro de la zona de scroll.
+          */}
           {customHeader}
-          {children}
+
+          {/*
+            * 2. Creamos un nuevo div que envolverá el contenido principal (children).
+            *    - `flex-1` (o flex-grow) hace que ocupe todo el espacio vertical restante.
+            *    - `overflow-y-auto` hace que SOLO este div sea el que tenga scroll si el contenido es demasiado largo.
+          */}
+          <div className="flex-1 overflow-y-auto">
+            {children}
+          </div>
         </div>
       </div>
     </div>
   );
 };
+// ====================== FIN DEL CÓDIGO ACTUALIZADO Y CORRECTO PARA Modal ======================
 
     {/* ====================== Iconos SVG (CORREGIDOS Y COMPLETOS v2.2) ====================== */}
     const SunIcon = ({ className }) => ( <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" className={className}> <path fillRule="evenodd" fill="#fcc667" d="M43.88,54.57l1.25,2.18a1,1,0,0,0,1.74-1l-1.26-2.18a1,1,0,0,0-1.37-.36A1,1,0,0,0,43.88,54.57Z"/> <path fillRule="evenodd" fill="#fcc667" d="M18.39,53.57l-1.26,2.18a1,1,0,0,0,1.74,1l1.25-2.18a1,1,0,0,0-.36-1.36A1,1,0,0,0,18.39,53.57Z"/> <path fillRule="evenodd" fill="#fcc667" d="M6.51,31H4a1,1,0,0,0,0,2H6.51a1,1,0,0,0,0-2Z"/> <path fillRule="evenodd" fill="#fcc667" d="M57.49,33H60a1,1,0,0,0,0-2H57.49a1,1,0,0,0,0,2Z"/> <path fillRule="evenodd" fill="#fcc667" d="M20.12,9.43,18.87,7.25a1,1,0,0,0-1.74,1l1.26,2.18a1,1,0,0,0,1.37.36A1,1,0,0,0,20.12,9.43Z"/> <path fillRule="evenodd" fill="#fcc667" d="M45.61,10.43l1.26-2.18a1,1,0,0,0-1.74-1L43.88,9.43a1,1,0,0,0,.36,1.36A1,1,0,0,0,45.61,10.43Z"/> <path fill="#fcc667" d="M31.71,4.23,29.08,15.74a2.19,2.19,0,0,1-3.61,1.12l-3.42-3a.46.46,0,0,0-.75.43l.85,4.45a2.58,2.58,0,0,1-.73,2.14,2.24,2.24,0,0,1-2,.42L8.1,17.86a.3.3,0,0,0-.29.51l8.65,8a2.42,2.42,0,0,1,.61,2.15,2.39,2.39,0,0,1-1.45,1.53l-4.27,1.49a.45.45,0,0,0,0,.86l4.27,1.48a2.63,2.63,0,0,1,1.5,1.72,2.27,2.27,0,0,1-.66,2l-8.65,8a.3.3,0,0,0,.29.51l11.28-3.49a2.46,2.46,0,0,1,2.17.55,2.4,2.4,0,0,1,.6,2l-.85,4.45a.46.46,0,0,0,.75.43l3.42-3a2.64,2.64,0,0,1,2.23-.44,2.25,2.25,0,0,1,1.38,1.56l2.63,11.51a.3.3,0,0,0,.58,0l2.63-11.51a2.19,2.19,0,0,1,3.61-1.12l3.42,3a.46.46,0,0,0,.75-.43l-.85-4.45a2.61,2.61,0,0,1,.73-2.15,2.27,2.27,0,0,1,2-.42L55.9,46.14a.3.3,0,0,0,.29-.51l-8.65-8a2.2,2.2,0,0,1,.84-3.69l4.27-1.48a.45.45,0,0,0,0-.86l-4.27-1.49a2.62,2.62,0,0,1-1.5-1.71,2.27,2.27,0,0,1,.66-2l8.65-8a.3.3,0,0,0-.29-.51L44.62,21.34a2.19,2.19,0,0,1-2.77-2.56l.85-4.45A.46.46,0,0,0,42,13.9l-3.42,3a2.61,2.61,0,0,1-2.23.43,2.21,2.21,0,0,1-1.38-1.55L32.29,4.23A.3.3,0,0,0,31.71,4.23Z"/> <path fill="#fbae36" d="M43.07,32A11.07,11.07,0,1,1,32,20.93,11.07,11.07,0,0,1,43.07,32Z"/> <g> <path fill="#fa8e1b" d="M32,44.07A12.07,12.07,0,1,1,44.07,32,12.09,12.09,0,0,1,32,44.07Zm0-22.14A10.07,10.07,0,1,0,42.07,32,10.08,10.08,0,0,0,32,21.93Z"/> </g> </svg> );
@@ -1014,7 +1042,7 @@ El PIN para ${user.profile.name} es: ${user.profile.pin}`);
     };
     // ====================== Componentes de Onboarding y Selección de Usuario ======================
     const ImportUserModal = ({open,onClose,onImport})=>{ const input=React.useRef(null); const handle=(file)=>{ if(!file) return; const reader = new FileReader(); reader.onload=(e)=>{ try{ const data=JSON.parse(e.target.result); if(!data.profile?.name || !data.profile.pin) throw new Error(); data.entries = Array.isArray(data.entries)?data.entries:[]; data.events = Array.isArray(data.events)?data.events:[]; if(!data.profile.createdAt) data.profile.createdAt=new Date().toISOString(); onImport(data); }catch{ alert('Archivo JSON inválido.'); } }; reader.readAsText(file); }; return (<Modal open={open} onClose={onClose} customHeader={<LoginHeader/>}><div className="p-4"><h3 className="text-lg font-semibold text-gray-800 dark:text-white text-center mb-4">Importar usuario desde JSON</h3><div className="rounded-lg border-2 border-dashed border-gray-400 p-8 text-center space-y-3"><p className="text-lg text-gray-800 dark:text-white">Arrastra tu archivo aquí</p><p className="text-sm text-gray-500 dark:text-gray-300">o selecciona desde el explorador</p><Button variant="outline" onClick={()=>input.current.click()}>Seleccionar archivo</Button><input ref={input} type="file" accept=".json,application/json" className="hidden" onChange={(e)=>handle(e.target.files[0])}/></div><div className="mt-4 flex justify-end"><Button variant="secondary" onClick={onClose}>Cancelar</Button></div></div></Modal>); };
-const UserSelect = ({users,onChoose,onCreate,onImport, onDelete})=>{ return (<div className="min-h-screen flex flex-col items-center justify-center p-4"><Modal open={true} onClose={()=>{}} size="lg" customHeader={<LoginHeader/>}><div className="p-4"><h3 className="text-lg font-semibold text-gray-800 dark:text-white text-center mb-4">Seleccionar usuario</h3><div className="grid grid-cols-1 md:grid-cols-2 gap-4">{users.map((u)=>(<Card key={u.profile.id || u.profile.name} className="cursor-pointer hover:shadow-lg transition" onClick={()=>onChoose(u)}><div className="flex items-start justify-between"><h4 className="text-lg font-semibold text-gray-800 dark:text-white">{u.profile.name}</h4><button className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300" onClick={(e)=>{e.stopPropagation(); onDelete(u.profile.id)}} title="Eliminar">🗑</button></div><p className="text-sm text-gray-600 dark:text-gray-300 mt-1">Registros: {u.entries?.length||0}</p></Card>))}</div><div className="mt-4 flex flex-wrap gap-3 justify-end"><Button onClick={onCreate}>Crear nuevo usuario</Button><Button variant="outline" onClick={onImport}>Importar desde JSON</Button></div></div></Modal></div>);};
+const UserSelect = ({users,onChoose,onCreate,onImport, onDelete})=>{ return (<div className="min-h-screen flex flex-col items-center justify-center p-4"><Modal open={true} onClose={()=>{}} size="lg" customHeader={<LoginHeader/>}><div className="p-4"><h3 className="text-lg font-semibold text-gray-800 dark:text-white text-center mb-4">Seleccionar usuario</h3><div className="grid grid-cols-1 md:grid-cols-2 gap-4">{users.map((u)=>(<Card key={u.profile.id || u.profile.name} className="cursor-pointer hover:shadow-lg transition" onClick={()=>onChoose(u)}><div className="flex items-start justify-between"><h4 className="text-lg font-semibold text-gray-800 dark:text-white">{u.profile.name}</h4><button className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 text-3xl leading-none" onClick={(e)=>{e.stopPropagation(); onDelete(u.profile.id)}} title="Eliminar">🗑</button></div><p className="text-sm !text-gray-600 dark:!text-gray-300 mt-1">Registros: {u.entries?.length||0}</p></Card>))}</div><div className="mt-4 flex flex-wrap gap-3 justify-end"><Button onClick={onCreate}>Crear nuevo usuario</Button><Button variant="outline" onClick={onImport}>Importar desde JSON</Button></div></div></Modal></div>);};
 // ====================== INICIO DEL CÓDIGO ACTUALIZADO PARA ONBOARDING ======================
 const Onboarding = ({onDone,onCancel})=>{
     const [form,setForm]=React.useState({name:'', age:'', biology: 'hombre', height:'', startWeight:'', targetWeight:'', pin:'', pin2:'', med1_name:'', med1_dose:'', med1_start:'', med1_freq: '', med2_name:'', med2_dose:'', med2_start:'', med2_freq:'' });
@@ -1145,11 +1173,7 @@ const EventModal = ({ open, onClose, date, onSave, onDelete, existingEvent, even
   }, [type]);
   return (
     <Modal open={open} onClose={onClose} size="md">
-      <div className="relative overflow-hidden flex items-center justify-between border-b-2 border-gray-300 dark:border-gray-600 p-4">
-        <div className="absolute inset-0 bg-gradient-to-l from-blue-200/50 dark:from-blue-800/50 to-transparent pointer-events-none z-0"></div>
-        <h3 className="relative z-10 text-lg font-semibold text-gray-800 dark:text-white">{existingEvent ? 'Editar Evento' : 'Añadir Evento'} del {new Date(date + 'T00:00:00').toLocaleDateString('es-ES', { day: '2-digit', month: 'long' })}</h3>
-        <button onClick={onClose} className="relative z-20 px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-800 dark:text-white">✕</button>
-      </div>
+<AppModalHeader title={`${existingEvent ? 'Editar Evento' : 'Añadir Evento'} del ${new Date(date + 'T00:00:00').toLocaleDateString('es-ES', { day: '2-digit', month: 'long' })}`} onClose={onClose} />
       <div className="p-4 space-y-4">
         <div>
           <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Tipo de Evento</label>
@@ -1484,11 +1508,7 @@ const DayModal = ({open, onClose, date, data, onSave, onDelete, onOpenEventModal
   return (<>
     <Modal open={open} onClose={onClose} size="lg">
       <div ref={modalRef} onClick={() => {if(showConverter) setShowConverter(false)}}>
-        <div className="relative overflow-hidden flex items-center justify-between border-b-2 border-gray-300 dark:border-gray-600 p-4">
-            <div className="absolute inset-0 bg-gradient-to-l from-blue-200/50 dark:from-blue-800/50 to-transparent pointer-events-none z-0"></div>
-            <h3 className="relative z-10 text-lg font-semibold text-gray-800 dark:text-white">{`Registro del ${new Date(date+'T00:00:00').toLocaleDateString('es-ES',{weekday:'long',day:'2-digit',month:'long'})}`}</h3>
-            <button onClick={onClose} className="relative z-20 px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-800 dark:text-white">✕</button>
-        </div>
+<AppModalHeader title={`Registro del ${new Date(date+'T00:00:00').toLocaleDateString('es-ES',{weekday:'long',day:'2-digit',month:'long'})}`} onClose={onClose} />
         <div className="p-4 day-modal">
             <form onSubmit={submit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -1700,16 +1720,9 @@ const ExerciseWizardModal = ({ open, onClose, onSave, initialData }) => {
       {/* SECCIÓN MODIFICADA */}
 {/* CAMBIO: El div contenedor ahora centra su contenido con flexbox */}
 <div className="relative p-4 border-b-2 dark:border-gray-600 flex items-center justify-center">
-  {/* El degradado sigue igual */}
-  <div className="absolute inset-0 bg-gradient-to-l from-blue-200/50 dark:from-blue-800/50 to-transparent pointer-events-none z-0"></div>
-
-  {/* CAMBIO 1: El botón de retroceso se posiciona absolutamente a la izquierda */}
+<div className="absolute inset-0 bg-gradient-to-l from-blue-200/100 dark:from-blue-800/55 to-transparent pointer-events-none z-0"></div>
   {step > 1 && <button onClick={() => setStep(prev => prev - 1)} className="absolute top-1/2 left-4 -translate-y-1/2 text-white hover:text-gray-300 z-20">←</button>}
-  
-  {/* El título se centra gracias al contenedor flex */}
   <h3 className="relative z-10 text-lg font-semibold text-center text-gray-800 dark:text-white">{getTitleForStep()}</h3>
-  
-  {/* CAMBIO 2: El botón de cierre se posiciona absolutamente a la derecha */}
   <button onClick={onClose} className="absolute top-1/2 right-4 -translate-y-1/2 p-1 text-white hover:text-gray-300 transition-colors z-20" aria-label="Cerrar modal">
      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
   </button>
@@ -1731,11 +1744,7 @@ const ExerciseDetailModal = ({ open, onClose, onEdit, onDelete, exerciseData }) 
 
     return (
         <Modal open={open} onClose={onClose} size="sm">
-            <div className="relative overflow-hidden flex items-center justify-between border-b-2 border-gray-300 dark:border-gray-600 p-4">
-                <div className="absolute inset-0 bg-gradient-to-l from-blue-200/50 dark:from-blue-800/50 to-transparent pointer-events-none z-0"></div>
-                <h3 className="relative z-10 text-lg font-semibold text-gray-800 dark:text-white">Detalle del Ejercicio</h3>
-                <button onClick={onClose} className="relative z-20 px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-800 dark:text-white">✕</button>
-            </div>
+<AppModalHeader title="Detalle del Ejercicio" onClose={onClose} />
             <div className="p-4 space-y-4">
                 <Card className="flex flex-col items-center justify-center p-4 text-center ExerciseDetailModal-text-fix">
                     {getExerciseComponent(exerciseData, "w-16 h-16 mb-2")}
@@ -1759,11 +1768,7 @@ const MeasurementChoiceModal = ({ open, onClose, onSelect }) => {
     if (!open) return null;
     return (
         <Modal open={open} onClose={onClose} size="sm">
-<div className="relative overflow-hidden flex items-center justify-between border-b-2 border-gray-300 dark:border-gray-600 p-4">
-  <div className="absolute inset-0 bg-gradient-to-l from-blue-200/50 dark:from-blue-800/50 to-transparent pointer-events-none z-0"></div>
-  <h3 className="relative z-10 text-lg font-semibold text-gray-800 dark:text-white">Gestión de Medidas Corporales</h3>
-  <button onClick={onClose} className="relative z-20 px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-800 dark:text-white">✕</button>
-</div>
+<AppModalHeader title="Detalle del Ejercicio" onClose={onClose} />
             <div className="p-6 flex flex-col space-y-4">
                 <Button onClick={() => onSelect('add')} variant="primary" className="w-full">Introducir Medidas Nuevas</Button>
                 <Button onClick={() => onSelect('view')} variant="secondary" className="w-full">Ver Medidas Registradas</Button>
@@ -1826,11 +1831,7 @@ const AddMeasurementModal = ({ open, onClose, onSave, existingMeasurement }) => 
 
     return (
         <Modal open={open} onClose={onClose} size="lg">
-            <div className="relative overflow-hidden flex items-center justify-between border-b-2 border-gray-300 dark:border-gray-600 p-4">
-              <div className="absolute inset-0 bg-gradient-to-l from-blue-200/50 dark:from-blue-800/50 to-transparent pointer-events-none z-0"></div>
-              <h3 className="relative z-10 text-lg font-semibold text-gray-800 dark:text-white">Introducir Medidas Corporales</h3>
-              <button onClick={onClose} className="relative z-20 px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-800 dark:text-white">✕</button>
-            </div>
+<AppModalHeader title="Detalle del Ejercicio" onClose={onClose} />
             <form onSubmit={handleSubmit} className="p-4 space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <CustomDateInput label="Fecha de la Medición" value={form.date} onChange={(e) => change('date', e.target.value)} />
@@ -1892,11 +1893,7 @@ const ViewMeasurementsModal = ({ open, onClose, measurements, onEdit, onDelete, 
 
     return (
         <Modal open={open} onClose={onClose} size="lg">
-            <div className="relative overflow-hidden flex items-center justify-between border-b-2 border-gray-300 dark:border-gray-600 p-4">
-                <div className="absolute inset-0 bg-gradient-to-l from-blue-200/50 dark:from-blue-800/50 to-transparent pointer-events-none z-0"></div>
-                <h3 className="relative z-10 text-lg font-semibold text-gray-800 dark:text-white">Medidas Registradas</h3>
-                <button onClick={onClose} className="relative z-20 px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-800 dark:text-white">✕</button>
-            </div>
+<AppModalHeader title="Detalle del Ejercicio" onClose={onClose} />
             <div className="p-4 max-h-[70vh] overflow-y-auto">
                 {sortedMeasurements.length === 0 ? (
                     <p className="text-center text-gray-600 dark:text-gray-300 py-8">No hay medidas registradas todavía.</p>
@@ -1909,7 +1906,7 @@ const ViewMeasurementsModal = ({ open, onClose, measurements, onEdit, onDelete, 
                             <Card key={m.id} className="p-3">
                                 <div className="flex justify-between items-start flex-wrap gap-y-2">
                                     {/* El div de la fecha ahora usa flex-grow para empujar los botones a la derecha */}
-                                    <div className="flex-grow">
+                                    <div>
                                         {/* INICIO DEL CÓDIGO A PEGAR */}
 <div>
     {/* Formato LARGO: Oculto por defecto, visible en pantallas 'sm' (640px) en adelante */}
@@ -1970,85 +1967,63 @@ const ViewMeasurementsModal = ({ open, onClose, measurements, onEdit, onDelete, 
         </Modal>
     );
 };
-// ====================== INICIO DEL CÓDIGO FINAL Y COMPLETO PARA CALENDARVIEW ======================
+// ====================== INICIO DEL CÓDIGO FINAL Y CORRECTO PARA CALENDARVIEW ======================
 const CalendarView = ({user, setUser, date, calendarRef, isActive})=>{
   const [dayModalDate, setDayModalDate] = React.useState(null);
   const [eventModal, setEventModal] = React.useState({ open: false, date: null, type: null, existing: null });
   const [selectedDay, setSelectedDay] = React.useState(null);
-  const [activeTooltip, setActiveTooltip] = React.useState(null); // NUEVO ESTADO: para controlar el tooltip activo
+  const [activeTooltip, setActiveTooltip] = React.useState(null);
   const [detailModal, setDetailModal] = React.useState({ open: false, exercise: null, index: -1 });
 
+  // INICIO DE LA NUEVA LÓGICA DE SCROLL AUTOMÁTICO
+  // 1. Usamos una referencia para "capturar" el nodo DOM del día de hoy cuando React lo renderice.
+  const todayRef = React.useRef(null);
+
+  React.useEffect(() => {
+    // 2. Este efecto se ejecuta cuando la pestaña se activa o cuando el nodo de "hoy" se captura.
+    if (isActive && todayRef.current) {
+      // 3. Pequeño retardo para que el scroll no sea brusco al cambiar de pestaña.
+      setTimeout(() => {
+        todayRef.current.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center'
+        });
+      }, 100);
+    }
+  // 4. La dependencia de todayRef.current asegura que esto solo se ejecute cuando el elemento exista.
+  }, [isActive, todayRef.current]);
+  // FIN DE LA NUEVA LÓGICA DE SCROLL AUTOMÁTICO
+
+
+  // El resto de funciones no necesitan cambios
   const handleEditExercise = (index) => {
-    // Esta función la necesita el ExerciseDetailModal
-    const entry = user.entries.find(e => e.date === selectedDay);
-    if (!entry) return;
     setDetailModal({ open: false, exercise: null, index: -1 });
-    // Aquí abrirías el modal de edición principal, como el ExerciseWizardModal
-    // Por ahora, simplemente cerramos el detalle para no complicarlo.
-    // Si tienes un wizard para editar, lo llamarías aquí.
   };
   
   const handleDeleteExercise = (dayStr, index) => {
       const entryIndex = user.entries.findIndex(e => e.date === dayStr);
       if (entryIndex === -1) return;
-      
       const updatedEntries = [...user.entries];
       const updatedExercises = updatedEntries[entryIndex].exercises.filter((_, i) => i !== index);
       updatedEntries[entryIndex].exercises = updatedExercises;
-      
       setUser({ ...user, entries: updatedEntries });
       setDetailModal({ open: false, exercise: null, index: -1 });
   };
 
-  React.useEffect(() => {
-    // 1. Nos aseguramos de que la pestaña esté activa, que tengamos la referencia y que estemos en vista móvil.
-    if (!isActive || !calendarRef.current || window.innerWidth >= 640) {
-      return;
-    }
-
-    const today = new Date();
-
-    // 2. Solo hacemos scroll si el mes que se está mostrando es el mes actual.
-    //    Esto evita que si el usuario navega a un mes anterior, la app le devuelva al presente.
-    if (date.getFullYear() !== today.getFullYear() || date.getMonth() !== today.getMonth()) {
-      return;
-    }
-
-    const dateToScrollString = fmt(today);
-    const targetElement = calendarRef.current.querySelector(`button[data-date="${dateToScrollString}"]`);
-
-    // 3. Si encontramos el día de hoy, hacemos scroll hacia él con un pequeño retardo
-    //    para dar tiempo a que el DOM se renderice completamente.
-    if (targetElement) {
-      setTimeout(() => {
-        targetElement.scrollIntoView({
-          behavior: 'smooth',
-          block: 'center' // 'center' suele dar una mejor experiencia visual
-        });
-      }, 150); // 150ms es un retardo seguro y casi imperceptible.
-    }
-
-  // 4. Este efecto se volverá a ejecutar cada vez que la pestaña se active o cambie el mes.
-  }, [isActive, date, user.entries, calendarRef]);
-
-// Lógica de clic restaurada y correcta
 const handleDayClick = (dayString) => {
     if (selectedDay === dayString) {
-        // Si el día clicado YA ESTABA seleccionado, abrimos el modal.
         setDayModalDate(dayString);
     } else {
-        // Si es un día diferente, simplemente lo seleccionamos.
         setSelectedDay(dayString);
-        setActiveTooltip(null); // Y cerramos cualquier tooltip abierto.
+        setActiveTooltip(null);
     }
 };
 
-  // NUEVA FUNCIÓN: Maneja los clics en los iconos de evento
   const handleExerciseIconClick = (e, dayString, exerciseData, index) => {
       e.stopPropagation();
       const uniqueId = `ex-${dayString}-${index}`;
       if (activeTooltip === uniqueId) {
-          setSelectedDay(dayString); // Aseguramos que el día está seleccionado
+          setSelectedDay(dayString);
           setDetailModal({ open: true, exercise: exerciseData, index: index, date: dayString });
           setActiveTooltip(null);
       } else {
@@ -2056,13 +2031,11 @@ const handleDayClick = (dayString) => {
       }
   };
   const handleIconClick = (e, eventData) => {
-      e.stopPropagation(); // Evita que el clic se propague al día del calendario
+      e.stopPropagation();
       if (activeTooltip === eventData.id) {
-          // Si el tooltip de este icono ya está activo (segundo clic), abrimos para editar
           setEventModal({ open: true, date: eventData.date, type: eventData.type, existing: eventData });
-          setActiveTooltip(null); // Ocultamos el tooltip
+          setActiveTooltip(null);
       } else {
-          // Si es el primer clic, mostramos el tooltip
           setActiveTooltip(eventData.id);
       }
   };
@@ -2081,9 +2054,9 @@ const countIconsForDay = (dayStr, eventsList) => {
   const entry = (user.entries || []).find(e => e.date === dayStr);
   if (isMedicationDay(day, user.profile?.medication)) count += 1;
   if (isMedicationDay(day, user.profile?.medication2)) count += 1;
-  if (entry?.exercises) { // Contar ejercicios del nuevo array
+  if (entry?.exercises) {
       count += entry.exercises.filter(ex => ex.exerciseTime && ex.exerciseTime !== '0min').length;
-  } else if (entry?.exerciseTime && entry.exerciseTime !== '0min') { // Compatibilidad con datos antiguos
+  } else if (entry?.exerciseTime && entry.exerciseTime !== '0min') {
       count += 1;
   }
   if (entry?.meditationTime && entry.meditationTime !== '0min') count += 1;
@@ -2095,7 +2068,6 @@ const countIconsForDay = (dayStr, eventsList) => {
 const saveEvent = (eventData) => {
   const events = [...(user.events || [])];
   const index = events.findIndex(e => e.id === eventData.id);
-  // Antes de guardar, aseguramos que si el mensaje está vacío, se guarde como "...."
   if (!eventData.message || String(eventData.message).trim() === '') {
       eventData.message = '....';
   }
@@ -2260,7 +2232,6 @@ const IconRenderer = ({ icon, isMobile }) => {
                     if (isMedicationDay(d, user.profile.medication)) allIcons.push({ id: `med1-${dayString}`, type: 'injection', event: {id: `med1-${dayString}`, message: `${user.profile.medication.name} - ${user.profile.medication.dose}`} });
                     if (isMedicationDay(d, user.profile.medication2)) allIcons.push({ id: `med2-${dayString}`, type: 'pill', event: {id: `med2-${dayString}`, message: `${user.profile.medication2.name} - ${user.profile.medication2.dose}`} });
                     if (entry?.meditationTime && entry.meditationTime !== '0min') allIcons.push({ id: `meditation-${dayString}`, type: 'meditation', data: entry, event: {id: `meditation-${dayString}`, message: `Meditación: ${entry.meditationTime}`} });
-                    // CORRECCIÓN CLAVE: ahora añadimos todos los eventos
                     otherEvents.forEach(e => allIcons.push({ id: e.id, type: e.type, event: e }));
                     
                     const isSelected = selectedDay === dayString;
@@ -2319,6 +2290,7 @@ const IconRenderer = ({ icon, isMobile }) => {
             const isCurrentMonth = d.getMonth() === date.getMonth();
             if (!isCurrentMonth) return null;
             const dayString = fmt(d);
+            const isToday = dayString === fmt(new Date());
             const entry = user.entries.find(e => e.date === dayString);
             const prevEntry = user.entries.filter(e => e.weight != null && e.date < dayString).pop();
             const diff = entry?.weight != null && prevEntry?.weight != null ? entry.weight - prevEntry.weight : null;
@@ -2331,14 +2303,19 @@ const IconRenderer = ({ icon, isMobile }) => {
             if (isMedicationDay(d, user.profile.medication)) allIcons.push({ id: `med1-${dayString}`, type: 'injection', event: {id: `med1-${dayString}`, message: `${user.profile.medication.name} - ${user.profile.medication.dose}`} });
             if (isMedicationDay(d, user.profile.medication2)) allIcons.push({ id: `med2-${dayString}`, type: 'pill', event: {id: `med2-${dayString}`, message: `${user.profile.medication2.name} - ${user.profile.medication2.dose}`} });
             if (entry?.meditationTime && entry.meditationTime !== '0min') allIcons.push({ id: `meditation-${dayString}`, type: 'meditation', data: entry, event: {id: `meditation-${dayString}`, message: `Meditación: ${entry.meditationTime}`} });
-            // CORRECCIÓN CLAVE: ahora añadimos todos los eventos
             otherEvents.forEach(e => allIcons.push({ id: e.id, type: e.type, event: e }));
             
             const hasIcons = allIcons.length > 0 || (entry?.exercises && entry.exercises.some(e => e.exerciseTime && e.exerciseTime !== '0min')) || (entry?.exerciseTime && entry.exerciseTime !== '0min');
             const isSundayWithIcons = d.getDay() === 0 && hasIcons;
             const isSelected = selectedDay === dayString;
             return (
-<button key={i} data-date={dayString} onClick={() => handleDayClick(dayString)} className={`relative w-full rounded-lg calendar-cell p-3 text-left hover:shadow-lg transition-all duration-200 flex items-center justify-between ${dayString === fmt(new Date()) ? 'ring-2 ring-blue-500 border-blue-500' : ''} ${isSundayWithIcons ? 'min-h-[6.5rem]' : 'min-h-[4.5rem]'} ${isSelected ? 'bg-blue-200 dark:bg-blue-800' : ''}`}>
+<button 
+  key={i} 
+  data-date={dayString} 
+  /* 5. APLICACIÓN DEL CALLBACK REF: Si es hoy, asignamos la referencia */
+  ref={isToday ? todayRef : null}
+  onClick={() => handleDayClick(dayString)} 
+  className={`relative w-full rounded-lg calendar-cell p-3 text-left hover:shadow-lg transition-all duration-200 flex items-center justify-between ${dayString === fmt(new Date()) ? 'ring-2 ring-blue-500 border-blue-500' : ''} ${isSundayWithIcons ? 'min-h-[6.5rem]' : 'min-h-[4.5rem]'} ${isSelected ? 'bg-blue-200 dark:bg-blue-800' : ''}`}>
     <div className="flex items-center gap-4">
         <div className="flex flex-col items-center justify-center w-12 text-center">
             <span className="text-xs font-bold uppercase text-gray-600 dark:text-gray-300">{weekdayAbbr}</span>
@@ -3275,7 +3252,7 @@ const AppViewHeader = () => {
               </div>);
           }
           if (tab === 'calendar') {
-              return (<div className="flex items-center gap-2 w-full justify-center">
+              return (<div className="flex items-center gap-2 w-full justify-center sm:w-auto">
                   <Button variant="secondary" onClick={()=>setCalendarDate(new Date(calendarDate.getFullYear(),calendarDate.getMonth()-1,1))}>← Mes</Button>
                   <div className="text-lg font-semibold text-gray-800 dark:text-white w-36 text-center">{calendarDate.toLocaleDateString('es-ES',{month:'long',year:'numeric'})}</div>
                   <Button variant="secondary" onClick={()=>setCalendarDate(new Date(calendarDate.getFullYear(),calendarDate.getMonth()+1,1))}>Mes →</Button>
@@ -3287,7 +3264,21 @@ const AppViewHeader = () => {
         return (<div className="max-w-7xl mx-auto p-2 sm:p-4 space-y-4">
           <AppViewHeader/>
           <div className="flex flex-wrap justify-between items-center gap-2">
-            <nav className="flex gap-2 flex-wrap">{[{id:'progress', label:'Progreso'}, {id:'calendar', label:'Calendario'}, {id:'charts', label:'Gráficos'}, {id:'profile', label:'Perfil'}].map(item=>(<Button key={item.id} variant={tab===item.id?'primary':'outline'} onClick={()=>setTab(item.id)}>{item.label}</Button>))}</nav>
+{/* INICIO DEL CÓDIGO A PEGAR */}
+<nav className="flex gap-2 flex-wrap w-full sm:w-auto">
+    {[{id:'progress', label:'Progreso'}, {id:'calendar', label:'Calendario'}, {id:'charts', label:'Gráficos'}, {id:'profile', label:'Perfil'}].map((item, index, arr) => (
+        <Button 
+            key={item.id} 
+            variant={tab === item.id ? 'primary' : 'outline'} 
+            onClick={() => setTab(item.id)}
+            // Esta es la línea clave: añade clases solo si es el último botón
+            className={index === arr.length - 1 ? 'flex-grow sm:flex-grow-0' : ''}
+        >
+            {item.label}
+        </Button>
+    ))}
+</nav>
+{/* FIN DEL CÓDIGO A PEGAR */}
             <NavExtras/>
           </div>
           {tab === 'progress' && <ProgressView user={current} scenario={scenario} />}
