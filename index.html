@@ -272,6 +272,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   background-color: #f9fafb; /* gris claro (un poco más bajo que #f3f4f6) */
   box-shadow: 0 15px 30px rgba(200,200,200,200.75); /* sombra más concentrada y visible */
   border-color: #000;
+  z-index: 10;
 }
 
 /* Modo oscuro */
@@ -1571,7 +1572,7 @@ const DayModal = ({open, onClose, date, data, onSave, onDelete, onOpenEventModal
     <ExerciseWizardModal
         open={isExerciseWizardOpen}
         onClose={() => setIsExerciseWizardOpen(false)}
-        initialData={editingExerciseIndex !== null ? form.exercises[editingExerciseIndex] : { exerciseTime: '0min', exerciseType: 'fuerza', exerciseIcon: '', exerciseIntensity: 'normal' }}
+        initialData={editingExerciseIndex !== null ? form.exercises[editingExerciseIndex] : { exerciseTime: '15min', exerciseType: 'fuerza', exerciseIcon: '', exerciseIntensity: 'normal' }}
         onSave={handleSaveExercise}
     />
     <ExerciseDetailModal
@@ -1909,7 +1910,18 @@ const ViewMeasurementsModal = ({ open, onClose, measurements, onEdit, onDelete, 
                                 <div className="flex justify-between items-start flex-wrap gap-y-2">
                                     {/* El div de la fecha ahora usa flex-grow para empujar los botones a la derecha */}
                                     <div className="flex-grow">
-                                        <p className="font-bold text-gray-800 dark:text-white">{new Date(m.date + 'T00:00:00').toLocaleDateString('es-ES', {year: 'numeric', month: 'long', day: 'numeric'})}</p>
+                                        {/* INICIO DEL CÓDIGO A PEGAR */}
+<div>
+    {/* Formato LARGO: Oculto por defecto, visible en pantallas 'sm' (640px) en adelante */}
+    <p className="hidden sm:block font-bold text-gray-800 dark:text-white">
+        {new Date(m.date + 'T00:00:00').toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}
+    </p>
+    {/* Formato CORTO: Visible por defecto, se oculta en pantallas 'sm' en adelante */}
+    <p className="sm:hidden font-bold text-gray-800 dark:text-white">
+        {new Date(m.date + 'T00:00:00').toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: '2-digit' }).replace(/\./g, '').replace(/ /g, '-')}
+    </p>
+</div>
+{/* FIN DEL CÓDIGO A PEGAR */}
                                         {/* La línea del subtítulo ha sido eliminada */}
                                     </div>
                                     <div className="flex flex-wrap gap-2">
@@ -1964,7 +1976,6 @@ const CalendarView = ({user, setUser, date, calendarRef, isActive})=>{
   const [eventModal, setEventModal] = React.useState({ open: false, date: null, type: null, existing: null });
   const [selectedDay, setSelectedDay] = React.useState(null);
   const [activeTooltip, setActiveTooltip] = React.useState(null); // NUEVO ESTADO: para controlar el tooltip activo
-  const lastTapRef = React.useRef({ day: null, time: 0 });
   const [detailModal, setDetailModal] = React.useState({ open: false, exercise: null, index: -1 });
 
   const handleEditExercise = (index) => {
@@ -2020,25 +2031,17 @@ const CalendarView = ({user, setUser, date, calendarRef, isActive})=>{
   // 4. Este efecto se volverá a ejecutar cada vez que la pestaña se active o cambie el mes.
   }, [isActive, date, user.entries, calendarRef]);
 
-  // Lógica de interacción unificada para clics y toques (CORREGIDA)
-  const handleDayInteraction = (dayString) => {
-      const now = Date.now();
-      const timeSinceLastTap = now - lastTapRef.current.time;
-
-      // Comprobamos si es el mismo día y si el tiempo es menor a 400ms (un doble toque rápido)
-      if (lastTapRef.current.day === dayString && timeSinceLastTap < 400) {
-          // Es un falso doble clic/toque, abrimos el modal
-          setDayModalDate(dayString);
-          // Reseteamos la referencia
-          lastTapRef.current = { day: null, time: 0 };
-      } else {
-          // Es un primer clic/toque, o ha pasado mucho tiempo
-          setSelectedDay(dayString);
-          setActiveTooltip(null);
-          // Guardamos la referencia de este toque
-          lastTapRef.current = { day: dayString, time: now };
-      }
-  };
+// Lógica de clic restaurada y correcta
+const handleDayClick = (dayString) => {
+    if (selectedDay === dayString) {
+        // Si el día clicado YA ESTABA seleccionado, abrimos el modal.
+        setDayModalDate(dayString);
+    } else {
+        // Si es un día diferente, simplemente lo seleccionamos.
+        setSelectedDay(dayString);
+        setActiveTooltip(null); // Y cerramos cualquier tooltip abierto.
+    }
+};
 
   // NUEVA FUNCIÓN: Maneja los clics en los iconos de evento
   const handleExerciseIconClick = (e, dayString, exerciseData, index) => {
@@ -2263,7 +2266,7 @@ const IconRenderer = ({ icon, isMobile }) => {
                     const isSelected = selectedDay === dayString;
                     return(
                        
-<button key={i} data-date={dayString} onClick={() => handleDayInteraction(dayString)} className={`bg-white/75 dark:bg-[#2B3544]/80 backdrop-blur-sm relative rounded-lg calendar-cell p-2 text-left hover:shadow-lg transition-all duration-200 flex flex-col items-start justify-start min-h-[9rem] ${dayString===fmt(new Date())?'ring-2 ring-blue-500 border-blue-500':''} ${!isCurrentMonth ? 'opacity-60 hover:opacity-100' : ''} ${isSelected ? 'bg-blue-200 dark:bg-blue-800' : ''}`}>
+<button key={i} data-date={dayString} onClick={() => handleDayClick(dayString)} className={`bg-white/75 dark:bg-[#2B3544]/80 backdrop-blur-sm relative rounded-lg calendar-cell p-2 text-left hover:shadow-lg transition-all duration-200 flex flex-col items-start justify-start min-h-[9rem] ${dayString===fmt(new Date())?'ring-2 ring-blue-500 border-blue-500':''} ${!isCurrentMonth ? 'opacity-60 hover:opacity-100' : ''} ${isSelected ? 'bg-blue-200 dark:bg-blue-800' : ''}`}>
                              <div className="flex items-center justify-between w-full gap-1">
                                 <span className="text-sm font-medium text-gray-700 dark:text-gray-200">{weekdayAbbr} {d.getDate()}</span>
                                 <div className={`flex items-center gap-1 ${d.getDay() === 0 && specialEvent ? 'mr-12' : ''}`}>
@@ -2335,7 +2338,7 @@ const IconRenderer = ({ icon, isMobile }) => {
             const isSundayWithIcons = d.getDay() === 0 && hasIcons;
             const isSelected = selectedDay === dayString;
             return (
-<button key={i} data-date={dayString} onClick={() => handleDayInteraction(dayString)} className={`relative w-full rounded-lg calendar-cell p-3 text-left hover:shadow-lg transition-all duration-200 flex items-center justify-between ${dayString === fmt(new Date()) ? 'ring-2 ring-blue-500 border-blue-500' : ''} ${isSundayWithIcons ? 'min-h-[6.5rem]' : 'min-h-[4.5rem]'} ${isSelected ? 'bg-blue-200 dark:bg-blue-800' : ''}`}>
+<button key={i} data-date={dayString} onClick={() => handleDayClick(dayString)} className={`relative w-full rounded-lg calendar-cell p-3 text-left hover:shadow-lg transition-all duration-200 flex items-center justify-between ${dayString === fmt(new Date()) ? 'ring-2 ring-blue-500 border-blue-500' : ''} ${isSundayWithIcons ? 'min-h-[6.5rem]' : 'min-h-[4.5rem]'} ${isSelected ? 'bg-blue-200 dark:bg-blue-800' : ''}`}>
     <div className="flex items-center gap-4">
         <div className="flex flex-col items-center justify-center w-12 text-center">
             <span className="text-xs font-bold uppercase text-gray-600 dark:text-gray-300">{weekdayAbbr}</span>
@@ -3212,7 +3215,7 @@ const AppViewHeader = () => {
 
   return (
     // 2. Quitamos "overflow-hidden" para que el tooltip no se corte.
-    <header className="bg-white/75 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl elevated-border p-3 flex flex-wrap justify-between items-center gap-y-2 relative">
+    <header className="bg-white/75 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl elevated-border p-3 flex flex-wrap justify-between items-center gap-y-2 relative z-30">
       <div className="absolute inset-0 bg-gradient-to-l from-blue-300 dark:from-blue-900 from-30% to-transparent"></div>
       <div className="flex items-center gap-3 relative z-10">
         <div className="text-2xl font-bold text-gray-800 dark:text-white">
@@ -3221,7 +3224,7 @@ const AppViewHeader = () => {
         </div>
         <span className="text-lg font-semibold text-blue-600 dark:text-blue-400">{current.profile.name}</span>
       </div>
-      <div className="flex items-center gap-2 relative z-10">
+      <div className="flex items-center gap-2 relative z-10 w-full sm:w-auto justify-end">
         <Button
           variant="outline"
           onClick={toggle}
@@ -3272,7 +3275,7 @@ const AppViewHeader = () => {
               </div>);
           }
           if (tab === 'calendar') {
-              return (<div className="flex items-center gap-2">
+              return (<div className="flex items-center gap-2 w-full justify-center">
                   <Button variant="secondary" onClick={()=>setCalendarDate(new Date(calendarDate.getFullYear(),calendarDate.getMonth()-1,1))}>← Mes</Button>
                   <div className="text-lg font-semibold text-gray-800 dark:text-white w-36 text-center">{calendarDate.toLocaleDateString('es-ES',{month:'long',year:'numeric'})}</div>
                   <Button variant="secondary" onClick={()=>setCalendarDate(new Date(calendarDate.getFullYear(),calendarDate.getMonth()+1,1))}>Mes →</Button>
