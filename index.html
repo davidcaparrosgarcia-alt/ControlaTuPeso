@@ -1768,7 +1768,7 @@ const MeasurementChoiceModal = ({ open, onClose, onSelect }) => {
     if (!open) return null;
     return (
         <Modal open={open} onClose={onClose} size="sm">
-<AppModalHeader title="Detalle del Ejercicio" onClose={onClose} />
+<AppModalHeader title="Gestión de Medidas Corporales" onClose={onClose} />
             <div className="p-6 flex flex-col space-y-4">
                 <Button onClick={() => onSelect('add')} variant="primary" className="w-full">Introducir Medidas Nuevas</Button>
                 <Button onClick={() => onSelect('view')} variant="secondary" className="w-full">Ver Medidas Registradas</Button>
@@ -1831,7 +1831,7 @@ const AddMeasurementModal = ({ open, onClose, onSave, existingMeasurement }) => 
 
     return (
         <Modal open={open} onClose={onClose} size="lg">
-<AppModalHeader title="Detalle del Ejercicio" onClose={onClose} />
+<AppModalHeader title={existingMeasurement ? "Editar Medida" : "Introducir Medidas Corporales"} onClose={onClose} />
             <form onSubmit={handleSubmit} className="p-4 space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <CustomDateInput label="Fecha de la Medición" value={form.date} onChange={(e) => change('date', e.target.value)} />
@@ -1893,7 +1893,7 @@ const ViewMeasurementsModal = ({ open, onClose, measurements, onEdit, onDelete, 
 
     return (
         <Modal open={open} onClose={onClose} size="lg">
-<AppModalHeader title="Detalle del Ejercicio" onClose={onClose} />
+<AppModalHeader title="Medidas Registradas" onClose={onClose} />
             <div className="p-4 max-h-[70vh] overflow-y-auto">
                 {sortedMeasurements.length === 0 ? (
                     <p className="text-center text-gray-600 dark:text-gray-300 py-8">No hay medidas registradas todavía.</p>
@@ -1904,33 +1904,28 @@ const ViewMeasurementsModal = ({ open, onClose, measurements, onEdit, onDelete, 
                             const unit = m.type === 'circunferencia' ? 'cm' : 'mm';
                             return (
                             <Card key={m.id} className="p-3">
-                                <div className="flex justify-between items-start flex-wrap gap-y-2">
-                                    {/* El div de la fecha ahora usa flex-grow para empujar los botones a la derecha */}
-                                    <div>
-                                        {/* INICIO DEL CÓDIGO A PEGAR */}
-<div>
-    {/* Formato LARGO: Oculto por defecto, visible en pantallas 'sm' (640px) en adelante */}
-    <p className="hidden sm:block font-bold text-gray-800 dark:text-white">
-        {new Date(m.date + 'T00:00:00').toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}
-    </p>
-    {/* Formato CORTO: Visible por defecto, se oculta en pantallas 'sm' en adelante */}
-    <p className="sm:hidden font-bold text-gray-800 dark:text-white">
-        {new Date(m.date + 'T00:00:00').toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: '2-digit' }).replace(/\./g, '').replace(/ /g, '-')}
-    </p>
+{/* INICIO DEL CÓDIGO CORREGIDO */}
+<div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-y-2">
+    <div>
+        {/* Formato de fecha responsivo (sin cambios) */}
+        <p className="hidden sm:block font-bold text-gray-800 dark:text-white">
+            {new Date(m.date + 'T00:00:00').toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}
+        </p>
+        <p className="sm:hidden font-bold text-gray-800 dark:text-white">
+            {new Date(m.date + 'T00:00:00').toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: '2-digit' }).replace(/\./g, '').replace(/ /g, '-')}
+        </p>
+    </div>
+    <div className="flex flex-wrap gap-2 sm:ml-auto">
+        <Button variant="outline" onClick={() => onEdit(m)} className="px-2 py-1 text-xs">Editar</Button>
+        <Button variant="danger" onClick={() => onDelete(m.id)} className="px-2 py-1 text-xs">Borrar</Button>
+        {m.photo && (
+            <Button variant="outline" onClick={() => setShowPhotoId(m.id)} className="px-2 py-1 text-xs">
+                📷 Ver Foto
+            </Button>
+        )}
+    </div>
 </div>
-{/* FIN DEL CÓDIGO A PEGAR */}
-                                        {/* La línea del subtítulo ha sido eliminada */}
-                                    </div>
-                                    <div className="flex flex-wrap gap-2">
-                                        <Button variant="outline" onClick={() => onEdit(m)} className="px-2 py-1 text-xs">Editar</Button>
-                                        <Button variant="danger" onClick={() => onDelete(m.id)} className="px-2 py-1 text-xs">Borrar</Button>
-                                        {m.photo && (
-                                            <Button variant="outline" onClick={() => setShowPhotoId(m.id)} className="px-2 py-1 text-xs">
-                                                📷 Ver Foto
-                                            </Button>
-                                        )}
-                                    </div>
-                                </div>
+{/* FIN DEL CÓDIGO CORREGIDO */}
                                 <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mt-2 text-center border-t dark:border-gray-600 pt-2">
                                     {/* Las unidades se añaden dinámicamente a cada valor */}
                                     <div><p className="text-xs text-gray-600 dark:text-gray-300">Cuello</p><p className="font-semibold text-gray-800 dark:text-white">{m.cuello ? `${m.cuello} ${unit}` : '—'}</p></div>
