@@ -105,28 +105,45 @@
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.02);
 }
 
-/* --- INICIO: CÓDIGO PARA GESTIÓN DE TEMAS VISUALES --- */
+/* --- INICIO: CÓDIGO PARA GESTIÓN DE TEMAS VISUALES (CORREGIDO PARA MÓVILES) --- */
 :root {
-  /* Tema 1: Verde Saludable (por defecto) */
+  /* Los temas se definen igual que antes */
   --app-background-light: url('imagenes/fondo-app.png');
   --app-background-dark: url('imagenes/fondo-app-oscuro.png');
-  /* He añadido una imagen por defecto para las ventanas, puedes crearla o usar la misma del fondo */
   --modal-background-image: var(--app-background-light); 
 }
 
 body {
+  /* El body ya no necesita la imagen. Solo lo preparamos para el pseudo-elemento */
+  position: relative;
+  background-color: transparent;
+}
+
+/* Esta es la capa que contendrá nuestro fondo de forma fiable */
+body::before {
+  content: "";
+  position: fixed; /* LOGRA EL MISMO EFECTO FIJO que 'background-attachment' pero funciona en móviles */
+  top: 0;
+  left: 0;
+  width: 100vw; /* Ocupa el 100% del ancho de la ventana */
+  height: 100vh; /* Ocupa el 100% del alto de la ventana */
+  z-index: -1; /* Se asegura de que esté detrás de todo el contenido */
+
+  /* MISMAS PROPIEDADES VISUALES que tenías para que se vea idéntico */
   background-image: var(--app-background-light);
-  background-size: cover;
-  background-position: center center;
-  background-attachment: fixed;
+  background-size: cover; /* <- Mantiene el escalado perfecto */
+  background-position: center center; /* <- Mantiene el centrado perfecto */
+  
+  /* Mantenemos la transición suave al cambiar de tema */
   transition: background-image 0.5s ease-in-out;
 }
 
-.dark body {
+/* En modo oscuro, simplemente cambiamos la imagen del pseudo-elemento */
+.dark body::before {
   background-image: var(--app-background-dark);
 }
 
-/* Estilo para el fondo de los modales */
+/* El estilo para los modales no cambia en absoluto */
 .modal-background {
   background-image: var(--modal-background-image);
 }
