@@ -105,26 +105,32 @@
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.02);
 }
 
-/* --- INICIO: CÓDIGO PARA EL NUEVO FONDO --- */
+/* --- INICIO: CÓDIGO PARA GESTIÓN DE TEMAS VISUALES --- */
 :root {
+  /* Tema 1: Verde Saludable (por defecto) */
   --app-background-light: url('imagenes/fondo-app.png');
-  /* Opcional: puedes definir un fondo diferente para el modo oscuro */
-  --app-background-dark: url('imagenes/fondo-app-oscuro.png'); /* <-- ¡LÍNEA ACTUALIZADA! */
+  --app-background-dark: url('imagenes/fondo-app-oscuro.png');
+  /* He añadido una imagen por defecto para las ventanas, puedes crearla o usar la misma del fondo */
+  --modal-background-image: var(--app-background-light); 
 }
 
 body {
   background-image: var(--app-background-light);
-  background-size: cover; /* Asegura que la imagen cubra toda la pantalla */
-  background-position: center center; /* Centra la imagen */
-  background-attachment: fixed; /* Evita que el fondo se desplace con el contenido */
-  transition: background-image 0.5s ease-in-out; /* Transición suave para el modo oscuro */
+  background-size: cover;
+  background-position: center center;
+  background-attachment: fixed;
+  transition: background-image 0.5s ease-in-out;
 }
 
 .dark body {
   background-image: var(--app-background-dark);
 }
-/* --- FIN: CÓDIGO PARA EL NUEVO FONDO --- */
 
+/* Estilo para el fondo de los modales */
+.modal-background {
+  background-image: var(--modal-background-image);
+}
+/* --- FIN: CÓDIGO PARA GESTIÓN DE TEMAS VISUALES --- */
 /* --- ESTILOS UNIFICADOS PARA TOOLTIPS --- */
 .tooltip-wrap {
   position: relative;
@@ -243,6 +249,24 @@ body {
 input[type="date"]::-webkit-calendar-picker-indicator {
   display: none;
   -webkit-appearance: none;
+}
+/* --- ICONOS PERSONALIZADOS CON BORDE TEMÁTICO --- */
+/* Por defecto, los bordes serán negros */
+.themed-stroke {
+  stroke: #000000;
+}
+/* En modo oscuro, los bordes serán blancos */
+.dark .themed-stroke {
+  stroke: #FFFFFF;
+}
+
+/* --- ICONO DE AJUSTES (MONOCROMÁTICO) --- */
+/* Este es un caso especial ya que es de un solo color */
+.themed-fill {
+  fill: #000000; /* Negro en modo claro */
+}
+.dark .themed-fill {
+  fill: #FFFFFF; /* Blanco en modo oscuro */
 }
 </style>
 <style>
@@ -372,6 +396,52 @@ button[class*="bg-red-600"] {
   <div id="pdf-charts-container" style="position: fixed; left: -9999px; top: -9999px; width: 800px; height: 1200px;"></div>
   <script type="text/babel" data-presets="env,react">
     // ====================== Constantes y Utilidades ======================
+    const VISUAL_THEME_KEY = 'health_tracker_visual_theme';
+
+    // Definimos los temas disponibles
+    const VISUAL_THEMES = {
+  'verde-saludable': {
+    name: 'Verde saludable',
+    cssVariables: {
+      '--app-background-light': "url('imagenes/fondo-app.png')",
+      '--app-background-dark': "url('imagenes/fondo-app-oscuro.png')",
+      '--modal-background-image': "url('imagenes/fondo-app.png')",
+    }
+  },
+  'claridad-calma': {
+    name: 'Azul en la calma', // <- renombrado
+    cssVariables: {
+      '--app-background-light': "url('imagenes/Fondo-app-2.png')",
+      '--app-background-dark': "url('imagenes/Fondo-app-oscuro-2.png')",
+      '--modal-background-image': "url('imagenes/Fondo-app-ventanas-2.png')",
+    }
+  },
+  'tierra-santa': {
+    name: 'Tierra santa',
+    cssVariables: {
+      '--app-background-light': "url('imagenes/Fondo-app-3.png')",
+      '--app-background-dark': "url('imagenes/Fondo-app-oscuro-3.png')",
+      '--modal-background-image': "url('imagenes/Fondo-app-ventanas-3.png')",
+    }
+  },
+  'calida-galaxia': {
+    name: 'Cálida Galáxia',
+    cssVariables: {
+      '--app-background-light': "url('imagenes/Fondo-app-4.png')",
+      '--app-background-dark': "url('imagenes/Fondo-app-oscuro-4.png')",
+      '--modal-background-image': "url('imagenes/Fondo-app-ventanas-4.png')",
+    }
+  },
+  'universo-absorbente': {
+    name: 'Universo absorbente',
+    cssVariables: {
+      '--app-background-light': "url('imagenes/Fondo-app-5.png')",
+      '--app-background-dark': "url('imagenes/Fondo-app-oscuro-5.png')",
+      '--modal-background-image': "url('imagenes/Fondo-app-ventanas-5.png')",
+    }
+  }
+};
+
     const USERS_KEY = 'health_tracker_users';
     const CURRENT_KEY = 'health_tracker_current';
     const THEME_KEY = 'health_tracker_theme';
@@ -644,6 +714,19 @@ function generateMeasurementsPDF(user, measurements) {
       return [state,setState]; 
     }
     function useTheme(){ const [theme,setTheme]=useLocalStorage(THEME_KEY,'light'); React.useEffect(()=>{ document.documentElement.classList.toggle('dark', theme === 'dark') },[theme]); return {theme, toggle:()=>setTheme(t=>t==='light'?'dark':'light')}; }
+    // Hook para gestionar el tema visual (fondos, colores, etc.)
+    function useVisualTheme() {
+      const [themeName, setThemeName] = useLocalStorage(VISUAL_THEME_KEY, 'verde-saludable');
+
+      React.useEffect(() => {
+        const theme = VISUAL_THEMES[themeName] || VISUAL_THEMES['verde-saludable'];
+        for (const key in theme.cssVariables) {
+          document.documentElement.style.setProperty(key, theme.cssVariables[key]);
+        }
+      }, [themeName]);
+
+      return [themeName, setThemeName];
+    }
     // ====================== Componentes Base (Card, Button, etc.) ======================
 const Card = ({children, className='', ...props})=> <div className={`bg-white/75 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl elevated-border shadow-sm p-4 ${className}`} {...props}>{children}</div>;
     const Button = ({children,onClick,type='button',variant='primary',title, className='', disabled=false})=>{ const base='inline-flex items-center justify-center gap-2 rounded-lg transition px-4 py-2 font-semibold disabled:opacity-50 disabled:cursor-not-allowed'; const v = variant==='primary'?'bg-blue-600 text-white hover:bg-blue-700' : variant==='secondary'?'bg-gray-100 text-gray-800 hover:bg-gray-200 dark:bg-gray-600 dark:text-gray-100 dark:hover:bg-gray-500' : variant==='danger'?'bg-red-600 text-white hover:bg-red-700':'btn-ghost bg-white/75 backdrop-blur-sm hover:bg-gray-50 dark:bg-gray-700/80 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-100'; return <button type={type} onClick={onClick} className={`${base} ${v} ${className}`} title={title} disabled={disabled}>{children}</button>; };
@@ -947,6 +1030,160 @@ const CalendarIcon = ({ className, ...props }) => (
     const BasketballIcon = ({ className, ...props }) => ( <svg version="1.0" xmlns="http://www.w3.org/2000/svg" width="512pt" height="512pt" viewBox="0 0 512 512" preserveAspectRatio="xMidYMid meet" className={className} {...props} fill="currentColor"><g transform="translate(0,512) scale(0.1,-0.1)" stroke="none"><path d="M530 4956 c-72 -19 -115 -44 -166 -94 -56 -56 -92 -128 -105 -214 -6 -39 -9 -657 -7 -1638 l3 -1575 24 -60 c33 -82 124 -173 206 -206 l60 -24 518 -3 c374 -2 517 0 517 8 0 46 -70 275 -113 373 l-26 57 -355 0 c-353 0 -355 0 -376 22 -20 22 -20 26 -20 1451 0 912 4 1435 10 1447 5 10 24 23 41 29 45 16 3593 16 3638 0 17 -6 36 -19 41 -29 6 -12 10 -535 10 -1447 0 -1425 0 -1429 -20 -1451 -21 -22 -23 -22 -381 -22 l-360 0 -33 -72 c-37 -81 -67 -170 -91 -268 -9 -36 -18 -73 -21 -82 -5 -17 23 -18 498 -18 543 0 575 3 661 53 62 37 132 117 159 185 l23 57 0 1620 0 1620 -26 61 c-33 78 -72 127 -135 169 -104 69 43 65 -2149 64 -1542 0 -1990 -3 -2025 -13z"/><path d="M2625 3662 c18 -75 48 -152 87 -222 32 -56 99 -149 109 -150 3 0 58 59 123 130 95 106 115 134 106 145 -28 33 -217 116 -311 135 -137 29 -130 31 -114 -38z"/><path d="M2385 3703 c-55 -12 -156 -49 -205 -73 -71 -36 -182 -118 -178 -132 2 -5 127 -122 278 -259 l275 -248 53 57 c29 31 64 71 78 89 l25 32 -50 64 c-91 116 -149 234 -186 381 -24 97 -31 103 -90 89z"/><path d="M3056 3309 c-137 -150 -137 -131 9 -204 83 -42 193 -75 289 -89 l38 -5 -6 37 c-11 62 -37 133 -76 212 -37 73 -113 180 -128 180 -4 0 -60 -59 -126 -131z"/><path d="M1835 3303 c-48 -82 -87 -191 -104 -287 -19 -106 -21 -102 62 -109 142 -12 315 -75 441 -161 l63 -44 71 82 c40 44 73 84 74 87 3 6 -548 509 -557 509 -3 0 -25 -35 -50 -77z"/><path d="M2756 2976 c-42 -46 -76 -88 -75 -92 0 -8 461 -428 529 -482 l29 -24 36 56 c68 107 131 305 123 388 l-3 33 -70 8 c-139 14 -346 90 -440 161 -16 12 -35 25 -41 29 -7 4 -44 -28 -88 -77z"/><path d="M1736 2717 c24 -144 152 -387 204 -387 11 0 66 52 134 128 l115 127 -22 17 c-78 62 -254 130 -375 146 l-63 9 7 -40z"/><path d="M2488 2678 l-75 -82 52 -67 c28 -37 67 -96 86 -133 l34 -66 228 0 c153 0 226 3 222 10 -10 16 -459 420 -466 420 -4 0 -40 -37 -81 -82z"/><path d="M2251 2418 c-85 -94 -89 -88 43 -88 l116 0 -30 48 c-37 58 -66 92 -77 91 -4 -1 -28 -23 -52 -51z"/><path d="M1262 2146 c7 -56 46 -142 87 -188 18 -20 55 -48 83 -62 l52 -26 1069 0 c808 0 1080 3 1111 12 88 26 178 147 200 271 l7 37 -1307 0 -1307 0 5 -44z"/><path d="M1540 1715 c0 -2 18 -39 39 -82 75 -149 141 -374 176 -603 23 -149 31 -501 15 -678 -13 -141 -13 -143 8 -164 38 -39 103 -23 123 29 8 22 12 23 151 23 l143 0 17 -30 c34 -59 109 -59 131 0 l11 30 208 0 208 0 0 -24 c0 -29 43 -66 76 -66 29 0 61 30 70 65 l6 25 142 0 142 0 9 -32 c19 -63 96 -76 132 -22 14 22 15 33 5 87 -7 34 -18 131 -24 214 -32 408 67 932 223 1186 l29 47 -91 0 -90 0 -34 -72 c-18 -40 -46 -110 -62 -155 l-28 -83 -162 0 c-154 0 -163 1 -163 19 0 22 38 248 46 274 5 15 -3 17 -74 17 l-79 0 -21 -127 c-12 -71 -23 -139 -24 -153 l-3 -25 -237 -3 -237 -2 -6 57 c-4 32 -15 101 -24 153 l-16 95 -79 3 c-77 3 -78 3 -73 -20 6 -22 28 -150 42 -245 l7 -43 -174 0 -173 1 -26 82 c-15 45 -41 115 -59 155 l-33 72 -83 0 c-46 0 -84 -2 -84 -5z m653 -557 c4 -57 10 -151 13 -210 l7 -108 -141 0 c-162 0 -146 -12 -157 115 -4 39 -15 117 -26 175 -10 58 -19 111 -19 118 0 9 38 12 159 12 l158 0 6 -102z m581 50 c-3 -29 -9 -123 -12 -208 l-7 -155 -196 -3 -196 -2 -7 132 c-3 73 -9 168 -13 211 l-6 77 222 0 221 0 -6 -52z m456 38 c0 -8 -9 -65 -19 -128 -11 -62 -23 -150 -27 -195 l-7 -83 -135 0 -135 0 6 163 c4 89 10 183 13 210 l7 -47 148 0 c121 0 149 -3 149 -14z m-1020 -706 l0 -150 -140 0 -141 0 2 143 c1 78 3 145 6 150 2 4 65 7 139 7 l134 0 0 -150z m542 8 c3 -79 3 -146 1 -150 -2 -5 -92 -8 -199 -8 l-194 0 0 143 c0 79 3 147 7 150 3 4 91 7 193 7 l187 0 5 -142z m418 75 c0 -38 3 -105 7 -150 l6 -83 -135 0 -135 0 -7 77 c-8 99 -8 208 1 216 3 4 64 7 135 7 l128 0 0 -67z"/></g></svg> );
     const SwimIcon = ({ className, ...props }) => ( <svg version="1.0" xmlns="http://www.w3.org/2000/svg" width="512pt" height="512pt" viewBox="0 0 512 512" preserveAspectRatio="xMidYMid meet" className={className} {...props} fill="currentColor"><g transform="translate(0,512) scale(0.1,-0.1)" stroke="none"><path d="M4152 4564 c-29 -11 -190 -143 -536 -439 -271 -232 -505 -439 -520 -458 -18 -23 -106 -251 -246 -632 -120 -328 -220 -598 -222 -600 -1 -1 -337 -184 -745 -406 -409 -221 -742 -404 -740 -405 1 -1 22 2 47 6 74 15 235 11 313 -6 91 -21 170 -57 271 -122 137 -90 202 -92 326 -12 173 112 289 150 460 150 171 0 281 -35 443 -139 142 -92 202 -92 341 -1 111 73 130 81 273 125 7 2 -72 157 -193 381 -112 208 -204 380 -204 383 0 3 77 218 171 476 l172 470 457 391 c519 445 510 435 510 568 -1 113 -57 208 -155 258 -53 28 -164 34 -223 12z"/><path d="M3910 3044 c-99 -26 -179 -72 -257 -149 -312 -307 -175 -827 250 -950 77 -22 217 -22 293 0 350 101 519 474 363 802 -65 137 -217 258 -374 298 -74 19 -202 18 -275 -1z"/><path d="M72 1478 c-36 -10 -72 -57 -72 -96 0 -31 26 -79 49 -91 10 -6 51 -14 92 -19 87 -11 128 -27 206 -80 138 -93 229 -123 373 -123 145 0 235 30 374 124 89 60 142 77 240 77 103 0 141 -13 249 -84 142 -93 219 -118 367 -117 142 0 226 27 350 111 118 80 133 85 260 85 129 0 132 -1 275 -95 95 -61 166 -88 260 -98 159 -17 284 12 420 100 143 92 146 93 275 93 l115 0 65 -38 c36 -21 94 -56 130 -78 97 -59 175 -80 298 -80 146 -1 236 29 375 123 78 53 119 69 206 80 88 11 106 19 126 58 20 39 19 69 -5 107 -24 40 -65 52 -150 43 -92 -10 -166 -34 -232 -75 -32 -19 -84 -51 -115 -70 -77 -48 -122 -58 -228 -53 -100 5 -121 13 -250 98 -42 27 -101 58 -131 69 -113 43 -289 44 -405 3 -30 -10 -99 -47 -153 -81 -123 -79 -158 -91 -262 -91 -98 0 -151 17 -240 77 -138 94 -232 125 -374 125 -142 0 -236 -31 -374 -125 -89 -60 -142 -77 -240 -77 -104 0 -141 13 -260 90 -148 96 -264 126 -426 109 -95 -9 -169 -37 -265 -99 -143 -94 -146 -95 -275 -95 -127 0 -142 5 -260 85 -78 53 -127 76 -196 93 -78 20 -151 25 -192 15z"/><path d="M35 927 c-39 -39 -45 -78 -20 -126 16 -33 48 -47 124 -56 75 -9 132 -32 236 -98 142 -91 176 -101 335 -102 166 0 222 16 367 109 119 77 156 90 253 90 98 0 142 -14 234 -74 169 -110 247 -134 411 -127 134 5 188 24 330 113 119 75 198 100 287 90 83 -10 124 -26 230 -94 134 -85 190 -104 323 -109 160 -7 253 21 398 119 101 68 141 82 242 82 104 0 136 -12 274 -99 122 -78 182 -97 316 -103 159 -6 242 18 378 110 83 56 153 86 222 93 81 9 113 22 130 56 25 48 19 87 -19 125 -31 31 -39 34 -93 34 -115 0 -222 -38 -346 -122 -103 -70 -140 -83 -247 -83 -107 0 -144 13 -247 83 -130 88 -230 122 -365 122 -134 0 -231 -30 -348 -110 -191 -130 -328 -132 -519 -8 -52 34 -126 73 -165 87 -63 23 -85 26 -201 26 -117 -1 -137 -4 -198 -28 -37 -14 -109 -53 -160 -86 -112 -72 -190 -96 -285 -87 -74 6 -137 33 -244 103 -104 68 -180 94 -298 100 -160 9 -241 -16 -409 -122 -105 -66 -187 -90 -279 -81 -72 6 -125 29 -256 111 -106 65 -162 85 -273 92 l-82 6 -36 -36z"/></g></svg> );
     const BicycleIcon = ({ className, ...props }) => ( <svg version="1.0" xmlns="http://www.w3.org/2000/svg" width="512pt" height="512pt" viewBox="0 0 512 512" preserveAspectRatio="xMidYMid meet" className={className} {...props} fill="currentColor"><g transform="translate(0,512) scale(0.1,-0.1)" stroke="none"><path d="M2585 5008 c-206 -27 -356 -233 -324 -443 49 -314 434 -439 659 -215 153 154 153 396 0 550 -88 87 -205 125 -335 108z"/><path d="M1964 4166 c-95 -44 -104 -62 -292 -555 -94 -246 -176 -468 -181 -492 -21 -91 -8 -208 32 -286 10 -18 17 -34 17 -36 0 -3 -51 -7 -112 -9 -124 -5 -158 -16 -201 -68 -53 -62 -48 -152 12 -211 49 -49 91 -59 254 -59 l138 0 14 -32 c13 -32 12 -33 -83 -174 l-97 -141 -80 28 c-305 106 -650 62 -923 -118 -83 -55 -213 -183 -272 -269 -304 -440 -230 -1041 173 -1384 566 -482 1424 -247 1668 457 16 46 29 92 29 104 0 18 4 20 44 14 41 -6 70 3 349 114 296 118 329 136 356 188 23 45 10 115 -30 151 l-21 21 288 283 c486 476 524 512 527 507 5 -6 37 -101 37 -110 0 -4 -28 -24 -62 -45 -134 -80 -233 -172 -320 -294 -297 -419 -248 -981 118 -1343 548 -543 1472 -318 1723 420 124 366 14 796 -272 1070 -136 130 -281 212 -462 259 -83 22 -123 27 -235 28 -74 1 -155 -1 -179 -4 l-43 -5 -103 303 c-56 166 -99 302 -95 302 5 0 47 -19 94 -41 101 -49 136 -48 193 5 30 27 36 41 40 83 9 92 -6 107 -247 228 l-209 105 20 -45 c73 -165 23 -351 -120 -448 l-25 -17 17 -53 c9 -30 17 -57 17 -60 0 -4 -49 -7 -108 -7 -60 0 -157 -3 -215 -7 l-107 -6 0 -31 c0 -33 -19 -118 -44 -199 l-15 -48 122 7 122 6 -172 -173 -172 -174 -72 -240 -71 -240 -46 -1 c-26 -1 -68 -11 -94 -22 -27 -12 -48 -19 -48 -15 0 3 69 238 154 522 85 284 157 531 161 549 10 50 -12 125 -51 171 -29 34 -54 47 -162 89 -70 27 -154 55 -187 62 -33 7 -76 21 -96 30 -51 26 -103 89 -117 140 -12 43 -84 701 -78 707 2 2 36 -83 76 -189 163 -431 169 -445 206 -477 19 -17 58 -37 87 -45 123 -35 686 -159 723 -159 80 -1 155 61 170 139 13 71 -22 151 -81 186 -17 9 -170 49 -340 88 -169 38 -309 71 -310 73 -6 6 -195 510 -193 513 2 1 48 -61 103 -137 l99 -140 34 88 c56 147 53 243 -13 329 -38 50 -86 74 -347 173 -208 80 -246 91 -300 91 -45 0 -78 -7 -114 -24z m298 -1758 c65 -24 118 -48 118 -53 0 -6 -56 -199 -125 -429 -69 -231 -128 -436 -131 -456 -9 -55 12 -117 58 -166 23 -24 39 -46 37 -48 -2 -2 -39 -18 -83 -36 l-79 -31 -22 21 c-13 12 -36 49 -51 83 -24 52 -28 75 -28 147 0 76 6 107 63 293 l63 208 -55 133 -55 133 61 7 c33 3 77 6 97 6 29 0 39 5 43 19 3 12 -1 22 -12 26 -9 4 -110 43 -226 87 -115 44 -219 84 -230 89 -11 4 81 8 210 9 l230 0 117 -42z m-378 -566 c46 -112 83 -202 81 -200 -2 2 -26 38 -54 81 -28 43 -86 113 -129 157 l-79 80 41 61 c34 52 41 58 48 43 4 -11 46 -111 92 -222z m-676 53 c37 -9 73 -19 80 -24 9 -5 -47 -96 -209 -332 -122 -178 -226 -336 -231 -352 -19 -54 11 -129 65 -160 16 -9 136 -13 453 -17 l431 -5 -13 -55 c-8 -30 -35 -98 -61 -150 -40 -82 -60 -108 -142 -190 -109 -108 -201 -163 -336 -201 -114 -33 -288 -33 -399 -1 -328 94 -549 368 -564 698 -7 152 13 248 80 384 45 91 64 117 142 195 69 69 110 101 171 132 75 39 179 77 235 86 64 11 236 6 298 -8z m3092 -15 c132 -45 219 -98 316 -195 78 -78 97 -104 142 -195 67 -136 87 -232 80 -384 -15 -330 -236 -604 -564 -698 -63 -18 -103 -23 -199 -22 -143 0 -237 23 -360 87 -112 59 -253 200 -312 312 -158 302 -107 656 129 896 59 61 149 129 169 129 4 0 62 -164 128 -363 126 -376 133 -393 198 -426 51 -26 131 -1 163 51 35 58 28 94 -100 470 -66 194 -120 357 -120 362 0 5 57 6 133 3 99 -4 148 -10 197 -27z m-2697 -210 c88 -98 141 -193 177 -317 l19 -63 -276 0 c-151 0 -273 4 -271 8 12 31 285 421 295 422 6 0 31 -23 56 -50z"/></g></svg> );
+const BotiquinIcon = ({ className, ...props }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" className={className} {...props}>
+    <defs>
+      <radialGradient id="bgGradient" cx="30%" cy="30%">
+        <stop offset="0%" stopColor="#F8F9FF"/>
+        <stop offset="100%" stopColor="#E8EAFC"/>
+      </radialGradient>
+    </defs>
+    <rect x="20" y="140" width="472" height="352" rx="24" ry="24" fill="url(#bgGradient)" className="themed-stroke" strokeWidth="12"/>
+    <rect x="180" y="30" width="152" height="40" rx="20" ry="20" fill="#888" className="themed-stroke" strokeWidth="8"/>
+    <rect x="200" y="70" width="20" height="70" fill="#888" className="themed-stroke" strokeWidth="6"/>
+    <rect x="292" y="70" width="20" height="70" fill="#888" className="themed-stroke" strokeWidth="6"/>
+    <rect x="80" y="130" width="30" height="25" rx="6" ry="6" fill="#BBB" className="themed-stroke" strokeWidth="4"/>
+    <rect x="140" y="130" width="20" height="25" rx="4" ry="4" fill="#BBB" className="themed-stroke" strokeWidth="4"/>
+    <rect x="352" y="130" width="20" height="25" rx="4" ry="4" fill="#BBB" className="themed-stroke" strokeWidth="4"/>
+    <rect x="402" y="130" width="30" height="25" rx="6" ry="6" fill="#BBB" className="themed-stroke" strokeWidth="4"/>
+    <circle cx="256" cy="316" r="90" fill="#C44534" className="themed-stroke" strokeWidth="12"/>
+    <rect x="236" y="256" width="40" height="120" rx="12" ry="12" fill="#FFF" className="themed-stroke" strokeWidth="8"/>
+    <rect x="196" y="296" width="120" height="40" rx="12" ry="12" fill="#FFF" className="themed-stroke" strokeWidth="8"/>
+    <rect x="236" y="296" width="40" height="40" fill="#FFF"/>
+  </svg>
+);
+
+const HistorialMedicoIcon = ({ className, ...props }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" className={className} {...props}>
+    <defs>
+      <linearGradient id="topPageGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" stopColor="#F8FAFC"/>
+        <stop offset="50%" stopColor="#F1F5F9"/>
+        <stop offset="100%" stopColor="#E2E8F0"/>
+      </linearGradient>
+      <linearGradient id="backPageGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" stopColor="#CBD5E1"/>
+        <stop offset="100%" stopColor="#94A3B8"/>
+      </linearGradient>
+    </defs>
+    <rect x="10" y="120" width="200" height="320" rx="8" ry="8" fill="url(#backPageGradient)" className="themed-stroke" strokeWidth="8"/>
+    <rect x="302" y="120" width="200" height="320" rx="8" ry="8" fill="url(#backPageGradient)" className="themed-stroke" strokeWidth="8"/>
+    <path d="M30 110 L200 110 Q210 115 210 125 L210 420 Q210 430 200 430 L40 430 Q30 425 30 415 Z" fill="url(#topPageGradient)" className="themed-stroke" strokeWidth="8"/>
+    <path d="M302 125 Q302 115 312 110 L482 110 Q492 115 492 125 L492 415 Q492 425 482 430 L312 430 Q302 425 302 415 Z" fill="url(#topPageGradient)" className="themed-stroke" strokeWidth="8"/>
+    <rect x="210" y="110" width="92" height="320" fill="#374151" className="themed-stroke" strokeWidth="8"/>
+    <line x1="256" y1="110" x2="256" y2="430" className="themed-stroke" strokeWidth="6"/>
+    <circle cx="256" cy="140" r="65" fill="#EF4444" className="themed-stroke" strokeWidth="12"/>
+    <path d="M241 105 L271 105 Q276 105 276 110 L276 125 L291 125 Q296 125 296 130 L296 150 Q296 155 291 155 L276 155 L276 170 Q276 175 271 175 L241 175 Q236 175 236 170 L236 155 L221 155 Q216 155 216 150 L216 130 Q216 125 221 125 L236 125 L236 110 Q236 105 241 105 Z" fill="#FFF" className="themed-stroke" strokeWidth="8"/>
+    <path d="M50 180 Q120 175 170 180" className="themed-stroke" strokeWidth="8" fill="none" strokeLinecap="round"/>
+    <path d="M50 200 Q110 195 160 200" className="themed-stroke" strokeWidth="8" fill="none" strokeLinecap="round"/>
+    <path d="M50 220 Q115 215 165 220" className="themed-stroke" strokeWidth="8" fill="none" strokeLinecap="round"/>
+    <path d="M50 260 Q125 255 175 260" className="themed-stroke" strokeWidth="8" fill="none" strokeLinecap="round"/>
+    <path d="M50 280 Q105 275 155 280" className="themed-stroke" strokeWidth="8" fill="none" strokeLinecap="round"/>
+    <path d="M50 300 Q120 295 170 300" className="themed-stroke" strokeWidth="8" fill="none" strokeLinecap="round"/>
+    <path d="M50 320 Q110 315 160 320" className="themed-stroke" strokeWidth="8" fill="none" strokeLinecap="round"/>
+    <path d="M50 340 Q115 335 165 340" className="themed-stroke" strokeWidth="8" fill="none" strokeLinecap="round"/>
+    <path d="M50 360 Q100 355 150 360" className="themed-stroke" strokeWidth="8" fill="none" strokeLinecap="round"/>
+    <path d="M50 380 Q130 375 180 380" className="themed-stroke" strokeWidth="8" fill="none" strokeLinecap="round"/>
+    <path d="M50 400 Q115 395 165 400" className="themed-stroke" strokeWidth="8" fill="none" strokeLinecap="round"/>
+    <path d="M342 180 Q392 175 442 180" className="themed-stroke" strokeWidth="8" fill="none" strokeLinecap="round"/>
+    <path d="M342 200 Q382 195 432 200" className="themed-stroke" strokeWidth="8" fill="none" strokeLinecap="round"/>
+    <path d="M342 220 Q397 215 447 220" className="themed-stroke" strokeWidth="8" fill="none" strokeLinecap="round"/>
+    <path d="M342 260 Q387 255 437 260" className="themed-stroke" strokeWidth="8" fill="none" strokeLinecap="round"/>
+    <path d="M342 280 Q402 275 452 280" className="themed-stroke" strokeWidth="8" fill="none" strokeLinecap="round"/>
+    <path d="M342 300 Q392 295 442 300" className="themed-stroke" strokeWidth="8" fill="none" strokeLinecap="round"/>
+    <path d="M342 320 Q407 315 457 320" className="themed-stroke" strokeWidth="8" fill="none" strokeLinecap="round"/>
+    <path d="M342 340 Q387 335 437 340" className="themed-stroke" strokeWidth="8" fill="none" strokeLinecap="round"/>
+    <path d="M342 360 Q397 355 447 360" className="themed-stroke" strokeWidth="8" fill="none" strokeLinecap="round"/>
+    <path d="M342 380 Q382 375 432 380" className="themed-stroke" strokeWidth="8" fill="none" strokeLinecap="round"/>
+    <path d="M342 400 Q387 395 437 400" className="themed-stroke" strokeWidth="8" fill="none" strokeLinecap="round"/>
+    <rect x="240" y="420" width="32" height="20" rx="4" ry="4" fill="#374151" className="themed-stroke" strokeWidth="4"/>
+  </svg>
+);
+
+const GenericoIcon = ({ className, ...props }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" className={className} {...props}>
+    <rect x="30" y="160" width="220" height="300" rx="40" ry="40" fill="#B8C5E8" className="themed-stroke" strokeWidth="10"/>
+    <rect x="90" y="100" width="100" height="70" fill="#B8C5E8" className="themed-stroke" strokeWidth="8"/>
+    <rect x="60" y="30" width="160" height="50" rx="25" ry="25" fill="#4A5568" className="themed-stroke" strokeWidth="8"/>
+    <rect x="80" y="80" width="120" height="25" rx="12" ry="12" fill="#718096" className="themed-stroke" strokeWidth="6"/>
+    <rect x="40" y="220" width="200" height="120" rx="8" ry="8" fill="#F56565" className="themed-stroke" strokeWidth="6"/>
+    <rect x="125" y="240" width="30" height="80" rx="6" ry="6" fill="#FFF" className="themed-stroke" strokeWidth="5"/>
+    <rect x="100" y="265" width="80" height="30" rx="6" ry="6" fill="#FFF" className="themed-stroke" strokeWidth="5"/>
+    <rect x="125" y="265" width="30" height="30" fill="#FFF"/>
+    <rect x="40" y="340" width="200" height="120" rx="8" ry="8" fill="#A0B0D8" className="themed-stroke" strokeWidth="6"/>
+    <ellipse cx="350" cy="280" rx="50" ry="30" fill="#F6E05E" className="themed-stroke" strokeWidth="8"/>
+    <line x1="300" y1="280" x2="400" y2="280" className="themed-stroke" strokeWidth="6"/>
+    <circle cx="300" cy="400" r="35" fill="#FFF" className="themed-stroke" strokeWidth="8"/>
+    <line x1="275" y1="400" x2="325" y2="400" className="themed-stroke" strokeWidth="4"/>
+    <ellipse cx="420" cy="380" rx="45" ry="28" fill="#F687B3" className="themed-stroke" strokeWidth="8"/>
+    <line x1="375" y1="380" x2="465" y2="380" className="themed-stroke" strokeWidth="6"/>
+  </svg>
+);
+
+const PastillasIcon = ({ className, ...props }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" className={className} {...props}>
+    <defs>
+      <radialGradient id="blueGradient" cx="30%" cy="30%">
+        <stop offset="0%" stopColor="#B8C5F2"/>
+        <stop offset="70%" stopColor="#7B9AF7"/>
+        <stop offset="100%" stopColor="#5A7BF0"/>
+      </radialGradient>
+      <radialGradient id="redGradient" cx="40%" cy="30%">
+        <stop offset="0%" stopColor="#FF7A7A"/>
+        <stop offset="100%" stopColor="#F44444"/>
+      </radialGradient>
+    </defs>
+    <circle cx="320" cy="200" r="120" fill="url(#redGradient)" stroke="#2C3E50" className="themed-stroke" strokeWidth="12"/>
+    <path d="M220 140 L380 280" stroke="#2C3E50" className="themed-stroke" strokeWidth="8" strokeLinecap="round"/>
+    <path d="M240 120 L400 260" stroke="#2C3E50" className="themed-stroke" strokeWidth="6" strokeLinecap="round"/>
+    <circle cx="200" cy="280" r="120" fill="url(#blueGradient)" stroke="#2C3E50" className="themed-stroke" strokeWidth="12"/>
+    <line x1="90" y1="280" x2="310" y2="280" stroke="#2C3E50" className="themed-stroke" strokeWidth="10" strokeLinecap="round"/>
+    <ellipse cx="150" cy="220" rx="35" ry="20" fill="#FFFFFF" opacity="0.6" transform="rotate(-30 150 220)"/>
+    <circle cx="170" cy="200" r="8" fill="#FFFFFF" opacity="0.8"/>
+  </svg>
+);
+
+const AjustesIcon = ({ className, ...props }) => (
+  <svg xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 512 512"
+  preserveAspectRatio="xMidYMid meet"
+  className={className} {...props}>
+    <g transform="translate(0.000000,512.000000) scale(0.100000,-0.100000)"
+    className="themed-fill" stroke="none">
+    <path d="M2172 5100 c-67 -41 -72 -60 -72 -300 0 -118 -5 -232 -9 -254 -15
+    -62 -51 -90 -170 -131 -58 -20 -158 -61 -222 -91 -63 -30 -125 -54 -138 -54
+    -43 0 -88 34 -246 191 -99 97 -171 160 -188 164 -16 4 -51 5 -79 3 l-50 -5
+    -240 -239 c-132 -132 -246 -251 -254 -266 -17 -32 -18 -111 -3 -141 6 -12 83
+    -94 170 -183 152 -154 179 -190 179 -236 0 -12 -26 -78 -59 -147 -32 -69 -72
+    -169 -90 -222 -36 -108 -65 -145 -127 -160 -22 -4 -136 -9 -254 -9 -240 0
+    -259 -5 -300 -72 -19 -31 -20 -51 -20 -388 0 -337 1 -357 20 -388 41 -67 60
+    -72 300 -72 118 0 232 -5 254 -9 62 -15 91 -52 127 -160 18 -53 58 -153 90
+    -222 33 -69 59 -135 59 -147 0 -46 -27 -82 -179 -236 -87 -89 -164 -171 -170
+    -183 -14 -28 -14 -108 0 -136 16 -31 469 -485 501 -503 32 -17 111 -18 141 -3
+    12 6 92 80 177 164 153 151 198 185 241 185 13 0 75 -24 138 -54 64 -30 164
+    -71 222 -91 119 -41 155 -69 170 -131 4 -22 9 -136 9 -254 0 -240 5 -259 72
+    -300 31 -19 51 -20 388 -20 337 0 357 1 388 20 67 41 72 60 72 300 0 118 5
+    232 9 254 15 62 52 91 160 127 53 17 153 58 222 90 69 33 135 59 148 59 43 0
+    88 -34 241 -185 85 -84 165 -158 177 -164 30 -15 109 -14 141 3 32 18 485 472
+    501 503 14 28 14 108 0 136 -6 12 -80 92 -164 177 -151 153 -185 198 -185 241
+    0 13 26 79 59 148 32 69 72 169 90 222 36 108 65 145 127 160 22 4 136 9 254
+    9 240 0 259 5 300 72 19 31 20 51 20 388 0 337 -1 357 -20 388 -41 67 -60 72
+    -300 72 -118 0 -232 5 -254 9 -62 15 -91 52 -127 160 -17 53 -58 153 -90 222
+    -33 69 -59 135 -59 148 0 43 35 88 191 246 97 99 160 171 164 188 4 16 5 51 3
+    79 l-5 50 -239 240 c-132 132 -252 246 -268 255 -20 10 -47 14 -88 11 l-59 -4
+    -162 -161 c-160 -158 -204 -193 -248 -193 -13 0 -79 26 -148 59 -69 32 -169
+    73 -222 90 -108 36 -145 65 -160 127 -4 22 -9 136 -9 254 0 240 -5 259 -72
+    300 -31 19 -51 20 -388 20 -337 0 -357 -1 -388 -20z m613 -1226 c545 -90 994
+    -537 1090 -1088 20 -115 20 -337 0 -452 -96 -551 -538 -992 -1090 -1089 -117
+    -20 -333 -20 -450 0 -484 85 -884 430 -1040 898 -47 142 -65 255 -65 417 0
+    162 18 275 65 417 210 629 835 1005 1490 897z"/>
+    <path d="M2930 2994 c-14 -9 -136 -127 -272 -263 l-248 -246 -97 96 c-125 123
+    -135 129 -203 129 -62 0 -100 -20 -131 -66 -24 -37 -26 -129 -3 -164 25 -37
+    293 -307 338 -341 32 -24 49 -29 96 -29 47 0 64 5 96 29 46 34 614 605 638
+    641 10 15 16 45 16 80 0 62 -20 100 -66 131 -37 24 -129 26 -164 3z"/>
+    </g>
+  </svg>
+);
 
     // ====================== Gestión de Datos de Usuario ======================
   function useUsers(){ 
@@ -2002,6 +2239,11 @@ const CalendarView = ({user, setUser, date, calendarRef, isActive})=>{
   const [selectedDay, setSelectedDay] = React.useState(null);
   const [activeTooltip, setActiveTooltip] = React.useState(null);
   const [detailModal, setDetailModal] = React.useState({ open: false, exercise: null, index: -1 });
+  const [isExerciseWizardOpen, setIsExerciseWizardOpen] = React.useState(false);
+  const [exerciseWizardInitialData, setExerciseWizardInitialData] = React.useState(null);
+  const [exerciseWizardTargetDate, setExerciseWizardTargetDate] = React.useState(null);
+  const [editingExerciseIndexCalendar, setEditingExerciseIndexCalendar] = React.useState(null);
+
 
   // INICIO DE LA NUEVA LÓGICA DE SCROLL AUTOMÁTICO
   // 1. Usamos una referencia para "capturar" el nodo DOM del día de hoy cuando React lo renderice.
@@ -2409,13 +2651,57 @@ const IconRenderer = ({ icon, isMobile }) => {
         open={detailModal.open} 
         onClose={() => setDetailModal({ open: false, exercise: null, index: -1 })} 
         exerciseData={detailModal.exercise} 
-        onEdit={() => {
-            // Lógica para abrir el wizard de edición si es necesario
-             alert("La edición de ejercicio desde aquí se implementará en el futuro. Por ahora, puedes borrarlo y añadirlo de nuevo.");
-             setDetailModal({ open: false, exercise: null, index: -1 });
-        }}
+onEdit={() => {
+  // cerramos el modal de detalle
+  setDetailModal({ open: false, exercise: null, index: -1, date: null });
+
+  // abrimos el wizard de ejercicio con los datos del ejercicio actual
+  setExerciseWizardInitialData(detailModal.exercise);
+  setExerciseWizardTargetDate(detailModal.date);
+  setEditingExerciseIndexCalendar(detailModal.index);
+  setIsExerciseWizardOpen(true);
+}}
+
         onDelete={() => handleDeleteExercise(detailModal.date, detailModal.index)} 
     />}
+
+{isExerciseWizardOpen && (
+  <ExerciseWizardModal
+    open={isExerciseWizardOpen}
+    onClose={() => {
+      setIsExerciseWizardOpen(false);
+      setExerciseWizardInitialData(null);
+      setExerciseWizardTargetDate(null);
+      setEditingExerciseIndexCalendar(null);
+    }}
+    initialData={exerciseWizardInitialData}
+    onSave={(exerciseData) => {
+      // buscamos la entrada del día
+      const updatedEntries = Array.isArray(user.entries) ? [...user.entries] : [];
+      const entryIndex = updatedEntries.findIndex(e => e.date === exerciseWizardTargetDate);
+
+      if (entryIndex !== -1) {
+        const entry = { ...updatedEntries[entryIndex] };
+        entry.exercises = [...(entry.exercises || [])];
+        if (editingExerciseIndexCalendar !== null && editingExerciseIndexCalendar >= 0) {
+          entry.exercises[editingExerciseIndexCalendar] = exerciseData;
+        } else {
+          entry.exercises.push(exerciseData);
+        }
+        updatedEntries[entryIndex] = entry;
+      }
+
+      setUser({ ...user, entries: updatedEntries });
+
+      // cerramos el wizard
+      setIsExerciseWizardOpen(false);
+      setExerciseWizardInitialData(null);
+      setExerciseWizardTargetDate(null);
+      setEditingExerciseIndexCalendar(null);
+    }}
+  />
+)}
+
   </div>);
 };
 // ====================== FIN DEL CÓDIGO FINAL Y COMPLETO PARA CALENDARVIEW ======================
@@ -3122,9 +3408,43 @@ const ProfileView = ({user, setUser, theme})=>{
     </>);
 };
 // ====================== FIN DEL CÓDIGO FINAL CON MEDIDAS (REORDENADO) PARA PROFILEVIEW ======================
+
+// ====================== INICIO DEL NUEVO COMPONENTE DE AJUSTES ======================
+const SettingsModal = ({ open, onClose, currentVisualTheme, onSetVisualTheme }) => {
+    if (!open) return null;
+
+    return (
+        <Modal open={open} onClose={onClose} size="lg" customHeader={<AppModalHeader title="Ajustes" onClose={onClose} />}>
+            <div className="p-6 space-y-6">
+                <Card>
+                    <div className="flex flex-wrap items-center justify-between gap-4">
+                        <h4 className="font-semibold text-lg text-gray-800 dark:text-white">Temas y Colores</h4>
+                        <div className="flex items-center gap-2">
+                            <label className="text-sm font-medium !text-black dark:text-gray-300">Selección de tema:</label>
+                            <Select
+                                value={currentVisualTheme}
+                                onChange={(e) => onSetVisualTheme(e.target.value)}
+                                options={Object.keys(VISUAL_THEMES).map(key => ({
+                                    value: key,
+                                    label: VISUAL_THEMES[key].name
+                                }))}
+                                containerClassName="w-48"
+                            />
+                        </div>
+                    </div>
+                    {/* Aquí puedes añadir futuras opciones de color para los degradados */}
+                </Card>
+                {/* Aquí irán futuras secciones de ajustes */}
+            </div>
+        </Modal>
+    );
+};
+// ====================== FIN DEL NUEVO COMPONENTE DE AJUSTES ======================
+
     // ====================== Componente Principal de la App ======================
     const App = ()=>{
       const {theme, toggle}=useTheme();
+      const [visualTheme, setVisualTheme] = useVisualTheme(); // <<-- NUEVA LÍNEA
       const {users,current, setCurrent, saveUser, removeUser} = useUsers();
       const [tab,setTab]=React.useState('progress');
       const [view, setView] = React.useState('loading');
@@ -3132,6 +3452,7 @@ const ProfileView = ({user, setUser, theme})=>{
       const [scenario, setScenario] = useLocalStorage(SCENARIO_KEY, 'neutro');
       const [calendarDate, setCalendarDate] = React.useState(new Date());
       const calendarRef = React.useRef(null);
+      const [isSettingsOpen, setIsSettingsOpen] = React.useState(false);
       React.useEffect(() => {
         const splash = document.getElementById('animated-splash');
         const video = document.getElementById('splash-video');
@@ -3189,7 +3510,7 @@ const ContractIcon = (props) => (
   </svg>
 );
 
-const AppViewHeader = () => {
+const AppViewHeader = ({ onOpenSettings }) => {
   const isPWAInstalled = () => {
     return window.matchMedia("(display-mode: standalone)").matches;
   };
@@ -3219,7 +3540,6 @@ const AppViewHeader = () => {
   };
 
   return (
-    // 2. Quitamos "overflow-hidden" para que el tooltip no se corte.
     <header className="bg-white/75 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl elevated-border p-3 flex flex-wrap justify-between items-center gap-y-2 relative z-30">
       <div className="absolute inset-0 bg-gradient-to-l from-blue-300 dark:from-blue-900 from-30% to-transparent"></div>
       <div className="flex items-center gap-3 relative z-10">
@@ -3243,15 +3563,9 @@ const AppViewHeader = () => {
             <Button
               variant="ghost"
               onClick={toggleFullscreen}
-              // 3. Añadimos "h-10" para que la altura sea igual a los otros botones.
               className="h-10 border border-gray-800 dark:border-gray-200 text-gray-800 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
             >
-              {/* 4. Corregimos la lógica: si está en pantalla completa (isFullscreen), mostramos el icono de contraer. */}
-              {isFullscreen ? (
-                <ContractIcon />
-              ) : (
-                <ExpandIcon />
-              )}
+              {isFullscreen ? <ContractIcon /> : <ExpandIcon />}
             </Button>
             <div className="tooltip bottom-tooltip">
               {isFullscreen ? "Salir de pantalla completa" : "Ver en pantalla completa"}
@@ -3266,10 +3580,25 @@ const AppViewHeader = () => {
         >
           Cerrar sesión
         </Button>
+
+        {/* --- INICIO: NUEVO BOTÓN DE AJUSTES --- */}
+        <div className="tooltip-wrap">
+          <Button
+            variant="ghost"
+            onClick={onOpenSettings}
+            className="relative h-10 w-10 p-2 border border-gray-800 dark:border-gray-200 text-gray-800 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
+          >
+            <AjustesIcon className="w-[50%] h-[50%] absolute inset-0 m-auto" />
+          </Button>
+          <div className="tooltip bottom-tooltip">Ajustes</div>
+        </div>
+        {/* --- FIN: NUEVO BOTÓN DE AJUSTES --- */}
+
       </div>
     </header>
   );
 };
+
 
 // ====================== FIN DEL CÓDIGO CORREGIDO ======================
       const NavExtras = () => {
@@ -3289,30 +3618,35 @@ const AppViewHeader = () => {
           return <div/>;
       }
       if (view === 'app' && current) {
+        
         return (<div className="max-w-7xl mx-auto p-2 sm:p-4 space-y-4">
-          <AppViewHeader/>
+          <AppViewHeader onOpenSettings={() => setIsSettingsOpen(true)} />
           <div className="flex flex-wrap justify-between items-center gap-2">
-{/* INICIO DEL CÓDIGO A PEGAR */}
-<nav className="flex gap-2 flex-wrap w-full sm:w-auto">
-    {[{id:'progress', label:'Progreso'}, {id:'calendar', label:'Calendario'}, {id:'charts', label:'Gráficos'}, {id:'profile', label:'Perfil'}].map((item, index, arr) => (
-        <Button 
-            key={item.id} 
-            variant={tab === item.id ? 'primary' : 'outline'} 
-            onClick={() => setTab(item.id)}
-            // Esta es la línea clave: añade clases solo si es el último botón
-            className={index === arr.length - 1 ? 'flex-grow sm:flex-grow-0' : ''}
-        >
-            {item.label}
-        </Button>
-    ))}
-</nav>
-{/* FIN DEL CÓDIGO A PEGAR */}
+            <nav className="flex gap-2 flex-wrap w-full sm:w-auto">
+                {[{id:'progress', label:'Progreso'}, {id:'calendar', label:'Calendario'}, {id:'charts', label:'Gráficos'}, {id:'profile', label:'Perfil'}].map((item, index, arr) => (
+                    <Button 
+                        key={item.id} 
+                        variant={tab === item.id ? 'primary' : 'outline'} 
+                        onClick={() => setTab(item.id)}
+                        className={index === arr.length - 1 ? 'flex-grow sm:flex-grow-0' : ''}
+                    >
+                        {item.label}
+                    </Button>
+                ))}
+            </nav>
             <NavExtras/>
           </div>
           {tab === 'progress' && <ProgressView user={current} scenario={scenario} />}
           {tab === 'calendar' && <CalendarView user={current} setUser={(u)=>saveUser(u,true)} date={calendarDate} calendarRef={calendarRef} isActive={tab === 'calendar'} />}
           {tab === 'charts' && <ChartsView user={current} theme={theme} />}
           {tab === 'profile' && <ProfileView user={current} setUser={(u)=>saveUser(u,true)} theme={theme} />}
+          
+          <SettingsModal
+            open={isSettingsOpen}
+            onClose={() => setIsSettingsOpen(false)}
+            currentVisualTheme={visualTheme}
+            onSetVisualTheme={setVisualTheme}
+          />
         </div>);
       }
       switch (view) {
