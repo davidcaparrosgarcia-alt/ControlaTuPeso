@@ -2157,8 +2157,8 @@ const AddMeasurementModal = ({ open, onClose, onSave, existingMeasurement }) => 
 const ViewMeasurementsModal = ({ open, onClose, measurements, onEdit, onDelete, user, onDownloadPDF }) => {
     const [showPhotoId, setShowPhotoId] = React.useState(null);
     const sortedMeasurements = React.useMemo(() => {
-        return [...measurements].sort((a,b) => new Date(b.date) - new Date(a.date));
-    }, [measurements]);
+  return (measurements || []).slice().sort((a,b) => new Date(b.date) - new Date(a.date));
+}, [measurements]);
 
     return (
         <Modal open={open} onClose={onClose} size="lg">
@@ -2173,29 +2173,29 @@ const ViewMeasurementsModal = ({ open, onClose, measurements, onEdit, onDelete, 
                             const unit = m.type === 'circunferencia' ? 'cm' : 'mm';
                             return (
                             <Card key={m.id} className="p-3">
-{/* INICIO DEL CÓDIGO CORREGIDO */}
-<div className="flex justify-between items-start gap-x-2">
-    <div>
-        {/* El formato de fecha ya es responsivo y se mantiene */}
-        <p className="hidden sm:block font-bold text-gray-800 dark:text-white">
-            {new Date(m.date + 'T00:00:00').toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}
-        </p>
-        <p className="sm:hidden font-bold text-gray-800 dark:text-white">
-            {new Date(m.date + 'T00:00:00').toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: '2-digit' }).replace(/\./g, '').replace(/ /g, '-')}
-        </p>
-    </div>
-    {/* La clave es 'flex-nowrap' para evitar que los botones salten de línea */}
-    <div className="flex flex-nowrap items-center gap-2">
-        <Button variant="outline" onClick={() => onEdit(m)} className="px-2 py-1 text-xs">Editar</Button>
-        <Button variant="danger" onClick={() => onDelete(m.id)} className="px-2 py-1 text-xs">Borrar</Button>
-        {m.photo && (
-            <Button variant="outline" onClick={() => setShowPhotoId(m.id)} className="px-2 py-1 text-xs">
-                Ver Foto
-            </Button>
-        )}
-    </div>
+{/* INICIO DEL CÓDIGO CORREGIDO - v2 */}
+<div className="flex justify-between items-center gap-x-2 min-w-0">
+  <div className="min-w-0">
+    <p className="hidden sm:block font-bold text-gray-800 dark:text-white truncate">
+      {new Date(m.date + 'T00:00:00').toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}
+    </p>
+    <p className="sm:hidden font-bold text-gray-800 dark:text-white truncate">
+      {new Date(m.date + 'T00:00:00').toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: '2-digit' }).replace(/\./g, '').replace(/ /g, '-')}
+    </p>
+  </div>
+
+  <div className="flex items-center gap-2 flex-nowrap">
+    <Button variant="outline" onClick={() => onEdit(m)} className="flex-shrink-0 px-2 py-1 text-xs">Editar</Button>
+    <Button variant="danger" onClick={() => onDelete(m.id)} className="flex-shrink-0 px-2 py-1 text-xs">Borrar</Button>
+    {m.photo && (
+      <Button variant="outline" onClick={() => setShowPhotoId(m.id)} className="flex-shrink-0 px-2 py-1 text-xs">
+        Ver Foto
+      </Button>
+    )}
+  </div>
 </div>
-{/* FIN DEL CÓDIGO CORREGIDO */}
+{/* FIN DEL CÓDIGO CORREGIDO - v2 */}
+
                                 <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mt-2 text-center border-t dark:border-gray-600 pt-2">
                                     {/* Las unidades se añaden dinámicamente a cada valor */}
                                     <div><p className="text-xs text-gray-600 dark:text-gray-300">Cuello</p><p className="font-semibold text-gray-800 dark:text-white">{m.cuello ? `${m.cuello} ${unit}` : '—'}</p></div>
@@ -3541,7 +3541,11 @@ const AppViewHeader = ({ onOpenSettings }) => {
 
   return (
     <header className="bg-white/75 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl elevated-border p-3 flex flex-wrap justify-between items-center gap-y-2 relative z-30">
-      <div className="absolute inset-0 bg-gradient-to-l from-blue-300 dark:from-blue-900 from-30% to-transparent"></div>
+      <div
+  className="absolute inset-0 z-0 rounded-2xl pointer-events-none"
+  aria-hidden="true"
+  style={{ background: 'linear-gradient(90deg, rgba(93,164,255,0.20) 0%, rgba(59,130,246,0.10) 40%, transparent 100%)' }}
+></div>
       <div className="flex items-center gap-3 relative z-10">
         <div className="text-2xl font-bold text-gray-800 dark:text-white">
           <span className="hidden sm:inline">ControlaTuPeso+</span>
